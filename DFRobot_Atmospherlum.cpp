@@ -121,7 +121,7 @@ sTime_t DFRobot_Atmospherlum::getTime(void)
 {
   sTime_t time;
   uint8_t buf[14];
-  readReg(HOLDING_YEAR, buf, 7, CMD_READ_HOLDING);
+  readReg(0x29, buf, 7, CMD_READ_HOLDING);
   time.year = buf[1] << 8 | buf[0];
   time.month = buf[3] << 8 | buf[2];
   time.day = buf[5] << 8 | buf[4];
@@ -247,12 +247,12 @@ uint8_t DFRobot_Atmospherlum::readReg(uint16_t reg, void *pBuf, uint8_t size,uin
     }
   if(_pWire){
     _pWire->beginTransmission(_addr);
-    _pWire->write(_addr);
-    _pWire->write(stateReg);
-    _pWire->write(0);
     _pWire->write(reg);
-    _pWire->write(0);
-    _pWire->write(size);
+    // _pWire->write(stateReg);
+    // _pWire->write(0);
+    // _pWire->write(reg);
+    // _pWire->write(0);
+    // _pWire->write(size);
     _pWire->endTransmission();
     _pWire->requestFrom(_addr, size*2);
     for(uint8_t i = 0; i < size*2; i++)
@@ -269,13 +269,13 @@ uint8_t DFRobot_Atmospherlum::writeReg(uint8_t reg, void *pBuf, size_t size)
   uint8_t ret = 0;
   if(_pWire){
     _pWire->beginTransmission(_addr);
-    _pWire->write(_addr);
-    _pWire->write(CMD_WRITE_MULTI_HOLDING);
-    _pWire->write(0);
-    _pWire->write(reg);
-    _pWire->write(0);
-    _pWire->write(size);
-    _pWire->write(size * 2);
+    _pWire->write(0x55);
+    // _pWire->write(CMD_WRITE_MULTI_HOLDING);
+    // _pWire->write(0);
+    // _pWire->write(reg);
+    // _pWire->write(0);
+    // _pWire->write(size);
+    // _pWire->write(size * 2);
     for(uint8_t i = 0; i < size * 2; i++){
       _pWire->write(_pBuf[i]);
     }
