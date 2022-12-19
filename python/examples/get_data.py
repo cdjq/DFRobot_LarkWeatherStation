@@ -38,8 +38,6 @@ def loop():
   print("Altitude=",EDU0157.get_value("Altitude"),EDU0157.get_unit("Altitude"))
   print("Battery=",EDU0157.get_value("Battery"),EDU0157.get_unit("Battery"))
   print(EDU0157.get_information(True))
-  print(EDU0157.get_information())
-  print(EDU0157.get_time_stamp())
   time.sleep(1)
 
 if __name__ == "__main__":

@@ -22,6 +22,9 @@ INPUT_HUMIDITY             =  0x09
 INPUT_PRESSURE_LOW         =  0x0A
 INPUT_ALTITUDE             =  0x0C
 INPUT_BATTERYVALUE         =  0x0D
+INPUT_BOARDSKU1            =  0x0E
+INPUT_BOARDSKU2            =  0x18
+
 
 HOLDING_STORAGETIME        =  0x07
 HOLDING_YEAR               =  0x08
@@ -36,6 +39,8 @@ HOLDING_POWER              =  0x0F
 I2C_MODE                  = 0x01
 UART_MODE                 = 0x02
 DEV_ADDRESS               = 0x42
+
+skuData=[0x40E4,0x4211,0x41cc,0x809D,0x416c,0x4202,0x4218,0x4142,0x4141]
 
 class DFRobot_Atmospherlum():
   def __init__(self ,bus = 0 ,baud = 9600, mode = I2C_MODE):
@@ -129,6 +134,7 @@ class DFRobot_Atmospherlum():
     returnstr += " hPa,Altitude: "
     returnstr += str(self._get_altitude())
     returnstr += " m"
+    returnstr += self._getExtendData()
     return returnstr
     
   def get_time_stamp(self):
@@ -156,6 +162,110 @@ class DFRobot_Atmospherlum():
       data += '0'
     data += str(second)
     return data
+
+  def _getExtendData(self):
+    str = ""
+    buf = self._read_reg(INPUT_BOARDSKU1,10,CMD_READ_INPUT)
+    sku1 = buf[1]<< 8 | buf[0]
+    if sku1 != 0:
+      str += self._getDataTitel(sku1,buf)
+    buf = self._read_reg(INPUT_BOARDSKU2,10,CMD_READ_INPUT)
+    sku2 = buf[1]<< 8 | buf[0]
+    if sku2 != 0:
+      str += self._getDataTitel(sku2,buf)
+    return str
+
+  def _getDataTitel(self,sku,buf):
+    str_data = ""
+    if sku == skuData[0]:
+      str_data += ",Light(lx): "
+      data1= buf[5]<<8|buf[4]
+      data2= buf[7]<<8|buf[6]
+      lux  = data1 | data2 <<16
+      lux = lux * (1.0023 + lux * (8.1488e-5 + lux * (-9.3924e-9 + lux * 6.0135e-13)))
+      str_data += str(round(lux,2))
+    elif sku == skuData[1]:
+      data1 = buf[5]<<8|buf[4]
+      data2 = buf[7]<<8|buf[6]
+      data3 = buf[9]<<8|buf[8]
+      data4 = buf[11]<<8|buf[10]
+      str_data += ",Angle_N: "
+      str_data += str(data1)
+      str_data += ",Mag_X(uT): "
+      str_data += str(data2)
+      str_data += ",Mag_Y(uT): "
+      str_data += str(data3)
+      str_data += ",Mag_Z(uT): "
+      str_data += str(data4)
+    elif sku == skuData[2]:
+      data1= buf[5]<<8|buf[4]
+      data2= buf[7]<<8|buf[6]
+      data3= buf[9]<<8|buf[8]
+      str_data += ",PM1.0(ug/m3): "
+      str_data += str(data1)
+      str_data += ",PM2.5(ug/m3): "
+      str_data += str(data2)
+      str_data += ",PM10(ug/m3): "
+      str_data += str(data3)
+    elif sku == skuData[3]:
+      data1= buf[5]<<8|buf[4]
+      data2= buf[7]<<8|buf[6]
+      data3= buf[9]<<8|buf[8]
+      str_data += ",Lat: "
+      str_data += str(data1)
+      str_data += ",Lon: "
+      str_data += str(data2)
+      str_data += ",Altitude(n): "
+      str_data += str(data3)
+    elif sku == skuData[4]:
+      data1= buf[5]<<8|buf[4]
+      data2= buf[7]<<8|buf[6]
+      data3= buf[9]<<8|buf[8]
+      data4= buf[11]<<8|buf[10]
+      data5= buf[13]<<8|buf[12]
+      data6= buf[15]<<8|buf[14]
+      data7= buf[17]<<8|buf[16]
+      data8= buf[19]<<8|buf[18]
+      str_data += ",405-425nm: "
+      str_data += str(data1)
+      str_data += ",435-455nm: "
+      str_data += str(data2)
+      str_data += ",470-490nm: "
+      str_data += str(data3)
+      str_data += ",505-525nm: "
+      str_data += str(data4)
+      str_data += ",545-565nm: "
+      str_data += str(data5)
+      str_data += ",580-600nm: "
+      str_data += str(data6)
+      str_data += ",620-640nm: "
+      str_data += str(data7)
+      str_data += ",670-690nm: "
+      str_data += str(data8)
+    elif sku == skuData[5]:
+      data1= buf[5]<<8|buf[4]
+      data2= buf[7]<<8|buf[6]
+      data3= buf[9]<<8|buf[8]
+      str_data += ",AQI: "
+      str_data += str(data1)
+      str_data += ",TVOC: "
+      str_data += str(data2)
+      str_data += ",ECO2: "
+      str_data += str(data3)
+    elif sku == skuData[6]:
+      str_data += ",CO2(ppm)"
+      str_data += str(buf[5]<<8|buf[4])
+    elif sku == skuData[7]:
+      str_data += ",O2(%vol)"
+      str_data += str(buf[5]<<8|buf[4])
+    elif sku == skuData[8]:
+      str_data += ",O3(ppb)"
+      str_data += str(buf[5]<<8|buf[4])
+    return str_data
+
+
+
+
 
   def _get_temp(self):
     buf = self._read_reg(INPUT_TEMP,1,CMD_READ_INPUT)

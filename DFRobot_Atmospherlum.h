@@ -42,6 +42,8 @@ class DFRobot_Atmospherlum : public DFRobot_RTU{
   #define INPUT_PRESSURE_LOW           0x0A
   #define INPUT_ALTITUDE               0x0C
   #define INPUT_BATTERYVALUE           0x0D
+  #define INPUT_BOARDSKU1              0x0E
+  #define INPUT_BOARDSKU2              0x18
 
   #define HOLDING_STORAGETIME          0x07
   #define HOLDING_YEAR                 0x08
@@ -90,6 +92,7 @@ public:
   String getUnit(const char *str);
   String getInformation(bool mode = false);
   String getTimeStamp();
+
 
 protected:
   bool detectDeviceAddress(uint8_t addr);
@@ -144,6 +147,8 @@ protected:
    * @return 返回云雀板载电池百分比
    */
   uint8_t getBattryPercentage(void);
+  String getExtendData(void);
+  String getDataTitel(uint16_t sku,void* buf);
 
 };
 

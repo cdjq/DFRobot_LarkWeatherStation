@@ -1,5 +1,7 @@
 #include "DFRobot_Atmospherlum.h"
 
+uint16_t skuData[]={0x40E4,0x4211,0x41cc,0x809D,0x416c,0x4202,0x4218,0x4142,0x4141};
+
 DFRobot_Atmospherlum::DFRobot_Atmospherlum(uint8_t addr, TwoWire *pWire)
 {
   _addr = addr;
@@ -161,7 +163,119 @@ String DFRobot_Atmospherlum::getInformation(bool state)
   data += " hPa,Altitude: ";
   data += (String)getAltitude();
   data += " m";
+  data += getExtendData();
   return data;
+}
+
+String DFRobot_Atmospherlum::getExtendData(void){
+  uint8_t buf[20];
+  String str = "";
+  uint8_t dataNumber = 0;
+  uint16_t sku1,sku2;
+  readReg(INPUT_BOARDSKU1, buf, 10, CMD_READ_INPUT);
+  sku1 = buf[1]<<8|buf[0];
+  if(sku1 != 0){
+    str += getDataTitel(sku1,buf);
+  }
+  readReg(INPUT_BOARDSKU2, buf, 10, CMD_READ_INPUT);
+  sku2 = buf[1]<<8|buf[0];
+  if(sku2 != 0){
+    str += getDataTitel(sku2,buf);
+  }
+  return str;
+}
+
+String DFRobot_Atmospherlum::getDataTitel(uint16_t sku,void* buf){
+  String str = "";
+  uint8_t* _buf = (uint8_t*)buf;
+  uint32_t lux = 0;
+  uint16_t data1,data2,data3,data4,data5,data6,data7,data8;
+  if(sku == skuData[0]){
+    str += ",Light(lx): ";
+    data1= _buf[5]<<8|_buf[4];
+    data2= _buf[7]<<8|_buf[6];
+    lux  = data1 | data2 <<16;
+    lux = lux * (1.0023f + lux * (8.1488e-5f + lux * (-9.3924e-9f + lux * 6.0135e-13f)));
+    str += String(lux);
+  }else if(sku == skuData[1]){
+    data1 = _buf[5]<<8|_buf[4];
+    data2 = _buf[7]<<8|_buf[6];
+    data3 = _buf[9]<<8|_buf[8];
+    data4 = _buf[11]<<8|_buf[10];
+    str += ",Angle_N: ";
+    str += String(data1);
+    str += ",Mag_X(uT): ";
+    str += String(data2);
+    str += ",Mag_Y(uT): ";
+    str += String(data3);
+    str += ",Mag_Z(uT): ";
+    str += String(data4);
+  }else if(sku == skuData[2]){
+    data1= _buf[5]<<8|_buf[4];
+    data2= _buf[7]<<8|_buf[6];
+    data3= _buf[9]<<8|_buf[8];
+    str += ",PM1.0(ug/m3): ";
+    str += String(data1);
+    str += ",PM2.5(ug/m3): ";
+    str += String(data2);
+    str += ",PM10(ug/m3): ";
+    str += String(data3);
+  }else if(sku == skuData[3]){
+    data1= _buf[5]<<8|_buf[4];
+    data2= _buf[7]<<8|_buf[6];
+    data3= _buf[9]<<8|_buf[8];
+    str += ",Lat: ";
+    str += String(data1);
+    str += ",Lon: ";
+    str += String(data2);
+    str += ",Altitude(n): ";
+    str += String(data3);
+  }else if(sku == skuData[4]){
+    data1= _buf[5]<<8|_buf[4];
+    data2= _buf[7]<<8|_buf[6];
+    data3= _buf[9]<<8|_buf[8];
+    data4= _buf[11]<<8|_buf[10];
+    data5= _buf[13]<<8|_buf[12];
+    data6= _buf[15]<<8|_buf[14];
+    data7= _buf[17]<<8|_buf[16];
+    data8= _buf[19]<<8|_buf[18];
+    str += ",405-425nm: ";
+    str += String(data1);
+    str += ",435-455nm: ";
+    str += String(data2);
+    str += ",470-490nm: ";
+    str += String(data3);
+    str += ",505-525nm: ";
+    str += String(data4);
+    str += ",545-565nm: ";
+    str += String(data5);
+    str += ",580-600nm: ";
+    str += String(data6);
+    str += ",620-640nm: ";
+    str += String(data7);
+    str += ",670-690nm: ";
+    str += String(data8);
+  }else if(sku == skuData[5]){
+    data1= _buf[5]<<8|_buf[4];
+    data2= _buf[7]<<8|_buf[6];
+    data3= _buf[9]<<8|_buf[8];
+    str += ",AQI: ";
+    str += String(data1);
+    str += ",TVOC: ";
+    str += String(data2);
+    str += ",ECO2: ";
+    str += String(data3);
+  }else if(sku == skuData[6]){
+    str += ",CO2(ppm)";
+    str += String(_buf[5]<<8|_buf[4]);
+  }else if(sku == skuData[7]){
+    str += ",O2(%vol)";
+    str += String(_buf[5]<<8|_buf[4]);
+  }else if(sku == skuData[8]){
+    str += ",O3(ppb)";
+    str += String(_buf[5]<<8|_buf[4]);
+  }
+  return str;
 }
 
 String DFRobot_Atmospherlum::getValue(const char *str)
