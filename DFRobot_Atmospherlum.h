@@ -29,127 +29,204 @@ typedef struct{
     uint16_t  week;
   }sTime_t;
 
-class DFRobot_Atmospherlum : public DFRobot_RTU{
 
-  #define CMD_READ_HOLDING             0x03
-  #define CMD_READ_INPUT               0x04
-  #define CMD_WRITE_MULTI_HOLDING      0x10
-  #define DEVICE_ADDR                  0x02
-  #define INPUT_WIND_SPEED             0x06
-  #define INPUT_WIND_DIRECTION         0x07
-  #define INPUT_TEMP                   0x08
-  #define INPUT_HUMIDITY               0x09
-  #define INPUT_PRESSURE_LOW           0x0A
-  #define INPUT_ALTITUDE               0x0C
-  #define INPUT_BATTERYVALUE           0x0D
-  #define INPUT_BOARDSKU1              0x0E
-  #define INPUT_BOARDSKU2              0x18
-
-  #define HOLDING_STORAGETIME          0x07
-  #define HOLDING_YEAR                 0x08
-  #define HOLDING_MONTH                0x09
-  #define HOLDING_DAY                  0x0A
-  #define HOLDING_HOUR                 0x0B
-  #define HOLDING_MINUTE               0x0C
-  #define HOLDING_SECOND               0x0D
-  #define HOLDING_WEEK                 0x0E
-  #define HOLDING_POWER                0x0F
+class DFRobot_Atmospherlum{
 public:
 
   /**
-   * @fn DFRobot_EnvironmentalSensor
-   * @brief DFRobot_EnvironmentalSensor constructor
-   * @param pWire I2C pointer to the TowWire stream, which requires calling begin in the demo to init Arduino I2C config.
-   * @param addr  I2C communication address of SEN0500/SEN0501 device
+   * @fn DFRobot_RP2040_SCI
+   * @brief DFRobot_RP2040_SCI Class Constructor.
    */
-  DFRobot_Atmospherlum(uint8_t addr, TwoWire *pWire);
+  DFRobot_Atmospherlum();
 
   /**
-   * @fn DFRobot_EnvironmentalSensor
-   * @brief DFRobot_EnvironmentalSensor constructor
-   * @param addr: The device address of the communication between the host computer and SEN0500/SEN0501 slave device
-   * @n     SEN0501_DEFAULT_DEVICE_ADDRESS or 32（0x20）: Default address of SEN0500/SEN0501 device, if users do not change the device address, it's default to 32.
-   * @param s   : The serial port pointer to the Stream, which requires calling begin in the demo to init communication serial port config of Arduino main controller, in line with that of SEN0500/SEN0501 device slave.
-   * @n SEN0500/SEN0501 serial port config: 9600 baud rate, 8-bit data bit, no check bit, 1 stop bit, the parameters can't be changed.
+   * @fn  ~DFRobot_RP2040_SCI
+   * @brief DFRobot_RP2040_SCI Class Destructor. 
    */
-  DFRobot_Atmospherlum(uint8_t addr, Stream *s);
-  ~DFRobot_Atmospherlum(){};
-  /**
-   * @brief 初始化传感器
-   * @return 返回初始化状态
-   * @retval 0 通信成功
-   * @retval 1 通信失败
-   */
-  uint8_t begin(void);
-  /**
-   * @brief 设置时间
-   * @param time 需要设置的时间
-   * @return NONE
-   */
-  void setTime(sTime_t time);
-  
-  String getValue(const char *str);
-  String getUnit(const char *str);
-  String getInformation(bool mode = false);
-  String getTimeStamp();
+  ~DFRobot_Atmospherlum();
 
+  /**
+   * @fn begin
+   * @brief Initalize the SCI Acquisition Module, mainly for initializing communication interface
+   * 
+   * @param freq Set communication frequency, no more than 100kHz
+   * @return int Init status
+   * @n       0  Init successful
+   * @n      -1  The communication interface class & object are not passed in
+   * @n      -2  Check if the hardware connection is correct
+   */
+  int begin(uint32_t freq = 100000);
+
+  String getValue(char *keys);
+  String getUnit(char *keys);
+  String getInformation(bool state);
+  void setTime(uint16_t year,uint8_t month,uint8_t day,uint8_t hour,uint8_t minute,uint8_t second);
+  String getTimeStamp(void);
 
 protected:
-  bool detectDeviceAddress(uint8_t addr);
-  String convertHourMinuteSecond(sTime_t t);
-  uint8_t  readReg(uint16_t reg, void *pBuf, uint8_t size,uint8_t stateReg);
-  uint8_t writeReg(uint8_t reg, void *pBuf, size_t size);
-  TwoWire   *_pWire = NULL;
-  Stream    *_s = NULL;
-  uint8_t   _addr;
+  // uint32_t getRefreshRate_ms(uint8_t rate);
+  // /**
+  //  * @fn recvPacket
+  //  * @brief Receive and parse the response data packet
+  //  * 
+  //  * @param cmd       Command to receive packet
+  //  * @param errorCode Receive error code
+  //  * @return Pointer array
+  //  * @n      NULL    indicates receiving packet failed
+  //  * @n      Non-NULL  response packet pointer
+  //  */
+  void *recvPacket(uint8_t cmd, uint8_t *errorCode);
   /**
-   * @brief 后去RTC中时钟
-   * @return 返回RTC中时间
+   * @fn init
+   * @brief Pure virtual function, interface init
+   * 
+   * @param freq     Communication frequency
+   * @return Init status
+   * @n       0    Init succeeded
+   * @n      -1    Interface object is null pointer
+   * @n      -2    Device does not exist
    */
-  sTime_t getTime(void);
+  virtual int init(uint32_t freq) = 0;
   /**
-   * @brief 获取云雀采集温度
-   * @return 返回云雀采集温度
+   * @fn sendPacket
+   * @brief I2C interface init
+   * 
+   * @param pkt    Set I2C communication frequency
+   * @param length Set I2C communication frequency
+   * @param stop   
+   * @n     true   Stop
+   * @n     false  Not stop
    */
-  uint16_t getTemp(void);
+  virtual void sendPacket(void *pkt, int length, bool stop) = 0;
   /**
-   * @brief 获取云雀采集的湿度
-   * @return 返回云雀采集的湿度
+   * @fn recvData
+   * @brief I2C interface init
+   * 
+   * @param data    Store the received data cache
+   * @param len     Byte number to be read
+   * @return Actually read byte number    
    */
-  uint16_t getHUM(void);
+  virtual int recvData(void *data, int len) = 0;
   /**
-   * @brief 获取云雀采集的风速
-   * @return 返回云雀采集的风速
+   * @fn recvFlush
+   * @brief Clear receive cache
    */
-  float getWindSpeed(void);
+  virtual void recvFlush() = 0;
   /**
-   * @brief 获取云雀采集的风向
-   * @return 返回云雀采集的风向
+   * @fn sendFlush
+   * @brief Clear send cache
    */
-  String getWindDir(void);
-  /**
-   * @brief 获取云雀采集的气压
-   * @return 返回云雀采集的气压
-   */
-  uint32_t getAirPressure(void);
-  /**
-   * @brief 获取云雀计算的海拔数据
-   * @return 返回云雀计算的海拔数据
-   */
-  uint16_t getAltitude(void);
-  /**
-   * @brief 获取云雀板载电池电压
-   * @return 返回云雀板载电池电压
-   */
-  uint16_t getBatteryCapacity(void);
-  /**
-   * @brief 获取云雀板载电池百分比
-   * @return 返回云雀板载电池百分比
-   */
-  uint8_t getBattryPercentage(void);
-  String getExtendData(void);
-  String getDataTitel(uint16_t sku,void* buf);
+  virtual void sendFlush() = 0;
 
+private:
+  uint32_t _timeout; ///< Time of receive timeout
+};
+
+class DFRobot_Atmospherlum_I2C:public DFRobot_Atmospherlum {
+
+
+public:
+
+DFRobot_Atmospherlum_I2C(uint8_t addr = 0x42, TwoWire *pWire = &Wire);
+~DFRobot_Atmospherlum_I2C();
+  protected:
+  /**
+   * @fn init
+   * @brief Initalize I2C interface
+   * 
+   * @param freq Set I2C communication frequency
+   * @return int Init status
+   * @n       0  Init successful
+   * @n      -1  The communication interface class & object are not passed in
+   * @n      -2  Check if the hardware connection is correct
+   */
+  int init(uint32_t freq);
+ /**
+   * @fn sendPacket
+   * @brief Send data
+   * 
+   * @param pkt    Data pointer
+   * @param length Length of the data to be sent
+   * @param stop   Whether to send stop condition
+   * @n     true   Stop
+   * @n     false  Not stop
+   */
+  void sendPacket(void *pkt, int length, bool stop = true);
+  /**
+   * @fn recvData
+   * @brief I2C read byte
+   * 
+   * @param data    Received and stored data cache
+   * @param len     Byte number to be read
+   * @return Actually read byte number   
+   */
+  int recvData(void *data, int len);
+  /**
+   * @fn recvFlush
+   * @brief Clear receive cache
+   */
+  void recvFlush();
+  /**
+   * @fn sendFlush
+   * @brief Clear send cache
+   */
+  void sendFlush();
+private:
+  TwoWire *_pWire;
+  uint8_t _addr;
+};
+
+class DFRobot_Atmospherlum_UART:public DFRobot_Atmospherlum {
+
+public:
+
+DFRobot_Atmospherlum_UART(Stream *s);
+~DFRobot_Atmospherlum_UART();
+protected:
+   /**
+   * @fn init
+   * @brief Initalize I2C interface
+   * 
+   * @param freq Set I2C communication frequency
+   * @return int Init status
+   * @n       0  Init successful
+   * @n      -1  The communication interface class & object are not passed in
+   * @n      -2  Check if the hardware connection is correct
+   */
+  int init(uint32_t freq);
+ /**
+   * @fn sendPacket
+   * @brief Send data
+   * 
+   * @param pkt    Data pointer
+   * @param length Length of the data to be sent
+   * @param stop   Whether to send stop condition
+   * @n     true   Stop
+   * @n     false  Not stop
+   */
+  void sendPacket(void *pkt, int length, bool stop = true);
+  /**
+   * @fn recvData
+   * @brief I2C read byte
+   * 
+   * @param data    Received and stored data cache
+   * @param len     Byte number to be read
+   * @return Actually read byte number   
+   */
+  int recvData(void *data, int len);
+  /**
+   * @fn recvFlush
+   * @brief Clear receive cache
+   */
+  void recvFlush();
+  /**
+   * @fn sendFlush
+   * @brief Clear send cache
+   */
+  void sendFlush();
+private:
+  uint8_t state = 0;
+  Stream *_s;
 };
 
 #endif

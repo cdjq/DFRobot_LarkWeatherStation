@@ -1,401 +1,414 @@
 #include "DFRobot_Atmospherlum.h"
 
-uint16_t skuData[]={0x40E4,0x4211,0x41cc,0x809D,0x416c,0x4202,0x4218,0x4142,0x4141};
+#define DEBUG_TIMEOUT_MS    2500
 
-DFRobot_Atmospherlum::DFRobot_Atmospherlum(uint8_t addr, TwoWire *pWire)
-{
-  _addr = addr;
-  _pWire = pWire;
-}
+#define CMD_GET_DATA                0x00 //根据传过来的名称返回名字
+#define CMD_GET_ALL_DATA            0x01 //获取板载全部传感器数据
+#define CMD_SET_TIME                0x02 //设置板载RTC时间
+#define CME_GET_TIME                0x03
+#define CMD_GET_UNIT                0x04 //获取传感器单位
+#define CMD_GET_VERSION             0x05 //获取版本号
+#define IIC_MAX_TRANSFER            32     ///< Maximum transferred data via I2C
+#define I2C_ACHE_MAX_LEN            32
+#define CMD_END             CMD_GET_VERSION
 
-DFRobot_Atmospherlum::DFRobot_Atmospherlum(uint8_t addr, Stream *s)
-{
-  _addr = addr;
-  _s = s;
-}
 
-uint8_t DFRobot_Atmospherlum::begin(void)
+#define ERR_CODE_NONE               0x00 ///< Normal communication 
+#define ERR_CODE_CMD_INVAILED       0x01 ///< Invalid command
+#define ERR_CODE_RES_PKT            0x02 ///< Response packet error
+#define ERR_CODE_M_NO_SPACE         0x03 ///< Insufficient memory of I2C controller(master)
+#define ERR_CODE_RES_TIMEOUT        0x04 ///< Response packet reception timeout
+#define ERR_CODE_CMD_PKT            0x05 ///< Invalid command packet or unmatched command
+#define ERR_CODE_SLAVE_BREAK        0x06 ///< Peripheral(slave) fault
+#define ERR_CODE_ARGS               0x07 ///< Set wrong parameter
+#define ERR_CODE_SKU                0x08 ///< The SKU is an invalid SKU, or unsupported by SCI Acquisition Module
+#define ERR_CODE_S_NO_SPACE         0x09 ///< Insufficient memory of I2C peripheral(slave)
+#define ERR_CODE_I2C_ADRESS         0x0A ///< Invalid I2C address
+
+#define STATUS_SUCCESS      0x53  ///< Status of successful response   
+#define STATUS_FAILED       0x63  ///< Status of failed response 
+
+typedef struct{
+  uint8_t cmd;      /**< Command                     */
+  uint8_t argsNumL; /**< Low byte of parameter number after the command    */
+  uint8_t argsNumH; /**< High byte of parameter number after the command    */
+  uint8_t args[0];  /**< The array with 0-data length, its size depends on the value of the previous variables argsNumL and argsNumH     */
+}__attribute__ ((packed)) sCmdSendPkt_t, *pCmdSendPkt_t;
+
+typedef struct{
+  uint8_t status;   /**< Response packet status, 0x53, response succeeded, 0x63, response failed */
+  uint8_t cmd;      /**< Response packet command */
+  uint8_t lenL;     /**< Low byte of the buf array length excluding packet header */
+  uint8_t lenH;     /**< High byte of the buf array length excluding packet header */
+  uint8_t buf[0];   /**< The array with 0-data length, its size depends on the value of the previous variables lenL and lenH */
+}__attribute__ ((packed)) sCmdRecvPkt_t, *pCmdRecvPkt_t;
+
+
+String DFRobot_Atmospherlum::getValue(char *keys)
 {
-  if(_addr > 0xF7){
-    DBG("Invaild Device addr.");
+  String values = "";
+  uint8_t errorCode;
+  uint16_t length = 0;
+  if(keys == NULL) return values;
+  length = strlen(keys);
+
+  pCmdSendPkt_t sendpkt = NULL;
+  sendpkt = (pCmdSendPkt_t)malloc(sizeof(sCmdSendPkt_t) + length);
+  if(sendpkt == NULL) return "";
+  sendpkt->cmd = CMD_GET_DATA;
+  sendpkt->argsNumL = length & 0xFF;
+  sendpkt->argsNumH = (length >> 8) & 0xFF;
+  memcpy(sendpkt->args, keys, strlen(keys));
+  
+  length += sizeof(sCmdSendPkt_t);
+  sendPacket(sendpkt, length, true);
+  free(sendpkt);
+  pCmdRecvPkt_t rcvpkt = (pCmdRecvPkt_t)recvPacket(CMD_GET_DATA, &errorCode);
+  if((rcvpkt != NULL) && (rcvpkt->status == STATUS_FAILED)) errorCode = rcvpkt->buf[0];
+  if((rcvpkt != NULL) && (rcvpkt->status == STATUS_SUCCESS)){
+    length = (rcvpkt->lenH << 8) | rcvpkt->lenL;
+    char sku[length + 1];
+    memcpy(sku, rcvpkt->buf, length);
+    sku[length] = '\0';
+    values = String(sku);
   }
-  if(_addr != 0){
-    if(!detectDeviceAddress(_addr)){
-      DBG("Device addr Error.");
-      return 1;
-    }
-  }else{
-    return 1;
+  if(rcvpkt) free(rcvpkt);
+  return values;
+
+}
+String DFRobot_Atmospherlum::getUnit(char *keys)
+{
+  String values = "";
+  uint8_t errorCode;
+  uint16_t length = 0;
+  if(keys == NULL) return values;
+  length = strlen(keys);
+
+  pCmdSendPkt_t sendpkt = NULL;
+  sendpkt = (pCmdSendPkt_t)malloc(sizeof(sCmdSendPkt_t) + length);
+  if(sendpkt == NULL) return "";
+  sendpkt->cmd = CMD_GET_UNIT;
+  sendpkt->argsNumL = length & 0xFF;
+  sendpkt->argsNumH = (length >> 8) & 0xFF;
+  memcpy(sendpkt->args, keys, strlen(keys));
+  
+  length += sizeof(sCmdSendPkt_t);
+  sendPacket(sendpkt, length, true);
+  free(sendpkt);
+  
+  pCmdRecvPkt_t rcvpkt = (pCmdRecvPkt_t)recvPacket(CMD_GET_UNIT, &errorCode);
+  if((rcvpkt != NULL) && (rcvpkt->status == STATUS_FAILED)) errorCode = rcvpkt->buf[0];
+  if((rcvpkt != NULL) && (rcvpkt->status == STATUS_SUCCESS)){
+    length = (rcvpkt->lenH << 8) | rcvpkt->lenL;
+    char sku[length + 1];
+    memcpy(sku, rcvpkt->buf, length);
+    sku[length] = '\0';
+    values = String(sku);
   }
-  return 0;
- }
-
-bool  DFRobot_Atmospherlum::detectDeviceAddress(uint8_t addr)
-{
-  if(_pWire){
-  uint8_t buf[2];
-  _pWire->begin();
-  readReg(DEVICE_ADDR, buf, 1,CMD_READ_INPUT);
-  DBG((buf[1] << 8| buf[0]));
-  if(addr == ((buf[1] << 8| buf[0]) & 0xFF))
-    return true;
-  }else{
-    uint16_t ret = readInputRegister(addr, DEVICE_ADDR);
-    
-    if((ret & 0xFF) == addr)
-      return true;
-  }
-  return false;
-}
-
-uint16_t DFRobot_Atmospherlum::getTemp(void)
-{
-  uint8_t buf[2];
-  readReg(INPUT_TEMP, buf, 1, CMD_READ_INPUT);
-  return buf[1] << 8| buf[0];
-}
-
-uint16_t DFRobot_Atmospherlum::getHUM(void){
-  uint8_t buf[2];
-  readReg(INPUT_HUMIDITY, buf, 1, CMD_READ_INPUT);
-  return buf[1] << 8| buf[0];
-}
-
-float DFRobot_Atmospherlum::getWindSpeed(void)
-{
-  uint8_t buf[2];
-  readReg(INPUT_WIND_SPEED, buf, 1, CMD_READ_INPUT);
-  return (float)(buf[1] << 8| buf[0])/100.0;
-}
-
-String DFRobot_Atmospherlum::getWindDir(void){
-  String str="";
-  uint16_t data = 0;
-  uint8_t buf[2];
-  readReg(INPUT_WIND_DIRECTION, buf, 1, CMD_READ_INPUT);
-  data = buf[1] << 8| buf[0];
-  switch(data){
-        case 0x00:
-          str = "N";
-        break;
-        case 0x2D:
-          str = "NE";
-        break;
-        case 0x5A:
-          str = "E";
-        break ;
-        case 0x87:
-          str = "SE";
-        break;
-        case 0xB4:
-          str = "S";
-        break;
-        case 0xE1:
-          str = "SW";
-        break;
-        case 0x10E:
-          str = "W";
-        break;
-        case 0x13B:
-          str = "NW";
-        break;
-       default:
-        break;
-      }
-  return str;
-}
-
-uint32_t DFRobot_Atmospherlum::getAirPressure(void)
-{
-  uint8_t buf[4];
-  readReg(INPUT_PRESSURE_LOW, buf, 2, CMD_READ_INPUT);
-  return buf[4] << 24 | buf[3] << 16 | buf[1] << 8 | buf[0];
-}
-
-uint16_t DFRobot_Atmospherlum::getAltitude(void)
-{
-  uint8_t buf[2];
-  readReg(INPUT_ALTITUDE, buf, 1, CMD_READ_INPUT);
-  return buf[1] << 8| buf[0];
-}
-
-sTime_t DFRobot_Atmospherlum::getTime(void)
-{
-  sTime_t time;
-  uint8_t buf[14];
-  readReg(0x29, buf, 7, CMD_READ_HOLDING);
-  time.year = buf[1] << 8 | buf[0];
-  time.month = buf[3] << 8 | buf[2];
-  time.day = buf[5] << 8 | buf[4];
-  time.hour = buf[7] << 8 | buf[6];
-  time.minute = buf[9] << 8 | buf[8];
-  time.second = buf[11] << 8 | buf[10];
-  time.week = buf[13] << 8 | buf[12];
-  return time;
-}
-
-void DFRobot_Atmospherlum::setTime(sTime_t time)
-{
-  uint8_t buf[14];
-  memcpy(buf,(uint8_t*)&time,sizeof(time));
-  writeReg(HOLDING_YEAR,buf,7);
+  if(rcvpkt) free(rcvpkt);
+  return values;
 }
 
 String DFRobot_Atmospherlum::getInformation(bool state)
 {
-  sTime_t time;
-  String data = "";
+  String values = "";
+  uint8_t errorCode;
+  uint16_t length = 1;
+
+  pCmdSendPkt_t sendpkt = NULL;
+  sendpkt = (pCmdSendPkt_t)malloc(sizeof(sCmdSendPkt_t) + length);
+  if(sendpkt == NULL) return "";
+  sendpkt->cmd = CMD_GET_ALL_DATA;
+  sendpkt->argsNumL = length & 0xFF;
+  sendpkt->argsNumH = (length >> 8) & 0xFF;
   if(state == true){
-    time = getTime();
-    data += convertHourMinuteSecond(time);
-    data += ",";
-  }
-  data +="WindSpeed: ";
-  data += (String)getWindSpeed();
-  data +=" m/s,WindDirection:";
-  data += (String)getWindDir();
-  data += " ,Temp: ";
-  data += (String)getTemp();
-  data += " C,Humi: ";
-  data += (String)getHUM();
-  data += " %RH,Pressure: ";
-  data += (String)((float)getAirPressure() / 100.0);
-  data += " hPa,Altitude: ";
-  data += (String)getAltitude();
-  data += " m";
-  data += getExtendData();
-  return data;
-}
-
-String DFRobot_Atmospherlum::getExtendData(void){
-  uint8_t buf[20];
-  String str = "";
-  uint8_t dataNumber = 0;
-  uint16_t sku1,sku2;
-  readReg(INPUT_BOARDSKU1, buf, 10, CMD_READ_INPUT);
-  sku1 = buf[1]<<8|buf[0];
-  if(sku1 != 0){
-    str += getDataTitel(sku1,buf);
-  }
-  readReg(INPUT_BOARDSKU2, buf, 10, CMD_READ_INPUT);
-  sku2 = buf[1]<<8|buf[0];
-  if(sku2 != 0){
-    str += getDataTitel(sku2,buf);
-  }
-  return str;
-}
-
-String DFRobot_Atmospherlum::getDataTitel(uint16_t sku,void* buf){
-  String str = "";
-  uint8_t* _buf = (uint8_t*)buf;
-  uint32_t lux = 0;
-  uint16_t data1,data2,data3,data4,data5,data6,data7,data8;
-  if(sku == skuData[0]){
-    str += ",Light(lx): ";
-    data1= _buf[5]<<8|_buf[4];
-    data2= _buf[7]<<8|_buf[6];
-    lux  = data1 | data2 <<16;
-    lux = lux * (1.0023f + lux * (8.1488e-5f + lux * (-9.3924e-9f + lux * 6.0135e-13f)));
-    str += String(lux);
-  }else if(sku == skuData[1]){
-    data1 = _buf[5]<<8|_buf[4];
-    data2 = _buf[7]<<8|_buf[6];
-    data3 = _buf[9]<<8|_buf[8];
-    data4 = _buf[11]<<8|_buf[10];
-    str += ",Angle_N: ";
-    str += String(data1);
-    str += ",Mag_X(uT): ";
-    str += String(data2);
-    str += ",Mag_Y(uT): ";
-    str += String(data3);
-    str += ",Mag_Z(uT): ";
-    str += String(data4);
-  }else if(sku == skuData[2]){
-    data1= _buf[5]<<8|_buf[4];
-    data2= _buf[7]<<8|_buf[6];
-    data3= _buf[9]<<8|_buf[8];
-    str += ",PM1.0(ug/m3): ";
-    str += String(data1);
-    str += ",PM2.5(ug/m3): ";
-    str += String(data2);
-    str += ",PM10(ug/m3): ";
-    str += String(data3);
-  }else if(sku == skuData[3]){
-    data1= _buf[5]<<8|_buf[4];
-    data2= _buf[7]<<8|_buf[6];
-    data3= _buf[9]<<8|_buf[8];
-    str += ",Lat: ";
-    str += String(data1);
-    str += ",Lon: ";
-    str += String(data2);
-    str += ",Altitude(n): ";
-    str += String(data3);
-  }else if(sku == skuData[4]){
-    data1= _buf[5]<<8|_buf[4];
-    data2= _buf[7]<<8|_buf[6];
-    data3= _buf[9]<<8|_buf[8];
-    data4= _buf[11]<<8|_buf[10];
-    data5= _buf[13]<<8|_buf[12];
-    data6= _buf[15]<<8|_buf[14];
-    data7= _buf[17]<<8|_buf[16];
-    data8= _buf[19]<<8|_buf[18];
-    str += ",405-425nm: ";
-    str += String(data1);
-    str += ",435-455nm: ";
-    str += String(data2);
-    str += ",470-490nm: ";
-    str += String(data3);
-    str += ",505-525nm: ";
-    str += String(data4);
-    str += ",545-565nm: ";
-    str += String(data5);
-    str += ",580-600nm: ";
-    str += String(data6);
-    str += ",620-640nm: ";
-    str += String(data7);
-    str += ",670-690nm: ";
-    str += String(data8);
-  }else if(sku == skuData[5]){
-    data1= _buf[5]<<8|_buf[4];
-    data2= _buf[7]<<8|_buf[6];
-    data3= _buf[9]<<8|_buf[8];
-    str += ",AQI: ";
-    str += String(data1);
-    str += ",TVOC: ";
-    str += String(data2);
-    str += ",ECO2: ";
-    str += String(data3);
-  }else if(sku == skuData[6]){
-    str += ",CO2(ppm)";
-    str += String(_buf[5]<<8|_buf[4]);
-  }else if(sku == skuData[7]){
-    str += ",O2(%vol)";
-    str += String(_buf[5]<<8|_buf[4]);
-  }else if(sku == skuData[8]){
-    str += ",O3(ppb)";
-    str += String(_buf[5]<<8|_buf[4]);
-  }
-  return str;
-}
-
-String DFRobot_Atmospherlum::getValue(const char *str)
-{
-  String data = "Error";
-  if(strcmp(str,"Speed") == 0){
-    data = (String)getWindSpeed();
-  }
-  if(strcmp(str,"DIR") == 0){
-    data =(String)getWindDir();
-  }
-  if(strcmp(str,"Temp") == 0){
-    data = (String)getTemp();
-  }
-  if(strcmp(str,"Humi") == 0){
-    data =(String)getHUM();
-  }
-  if(strcmp(str,"Pressure") == 0){
-    data = (String)((float)getAirPressure() / 100.0);
-  }
-  if(strcmp(str,"Altitude") == 0){
-    data = (String)getAltitude();
-  }
-  if(strcmp(str,"Battery") == 0){
-    data = (String)getBatteryCapacity();
-  }
-  return data;
-}
-String DFRobot_Atmospherlum::getUnit(const char *str)
-{
-  String data = "Error";
-  if(strcmp(str,"Speed") == 0){
-    data = " m/s";
-  }
-  if(strcmp(str,"Temp") == 0){
-    data = " C";
-  }
-  if(strcmp(str,"Humi") == 0){
-    data = " %RH";
-  }
-  if(strcmp(str,"Pressure") == 0){
-    data = " hPa";
-  }
-  if(strcmp(str,"Altitude") == 0){
-    data = " m";
-  }
-  if(strcmp(str,"Battery") == 0){
-    data = " %";
-  }
-  return data;
-}
-String DFRobot_Atmospherlum::getTimeStamp()
-{
-  sTime_t time;
-  time = getTime();
-  return convertHourMinuteSecond(time);
-}
-
-uint16_t DFRobot_Atmospherlum::getBatteryCapacity(void)
-{
-   uint8_t buf[2];
-  readReg(INPUT_BATTERYVALUE, buf, 1, CMD_READ_INPUT);
-  return buf[1] << 8| buf[0];
-}
-String DFRobot_Atmospherlum::convertHourMinuteSecond(sTime_t t){
-    String rlt = "";
-    if(t.hour < 10) rlt += '0';
-    rlt += String(t.hour) + ':';
-    if(t.minute < 10) rlt += '0';
-    rlt += String(t.minute) + ':';
-    if(t.second < 10) rlt += '0';
-    rlt += String(t.second);
-    return rlt;
-}
-
-uint8_t DFRobot_Atmospherlum::readReg(uint16_t reg, void *pBuf, uint8_t size,uint8_t stateReg)
-{
-  uint8_t* _pBuf = (uint8_t*)pBuf;
-  uint8_t _reg  = 0;
-    if(pBuf == NULL){
-      DBG("data error");
-      return 0;
-    }
-  if(_pWire){
-    _pWire->beginTransmission(_addr);
-    _pWire->write(reg);
-    // _pWire->write(stateReg);
-    // _pWire->write(0);
-    // _pWire->write(reg);
-    // _pWire->write(0);
-    // _pWire->write(size);
-    _pWire->endTransmission();
-    _pWire->requestFrom(_addr, size*2);
-    for(uint8_t i = 0; i < size*2; i++)
-      _pBuf[i] = _pWire->read();
-    return size;
+    sendpkt->args[0] = 1;
   }else{
-    return readInputRegister(_addr, reg, _pBuf, size);
+    sendpkt->args[0] = 0;
+  }
+    
+ 
+  length += sizeof(sCmdSendPkt_t);
+  sendPacket(sendpkt, length, true);
+  free(sendpkt);
+
+  pCmdRecvPkt_t rcvpkt = (pCmdRecvPkt_t)recvPacket(CMD_GET_ALL_DATA, &errorCode);
+  if((rcvpkt != NULL) && (rcvpkt->status == STATUS_FAILED)) errorCode = rcvpkt->buf[0];
+  if((rcvpkt != NULL) && (rcvpkt->status == STATUS_SUCCESS)){
+    length = (rcvpkt->lenH << 8) | rcvpkt->lenL;
+    char sku[length + 1];
+    memcpy(sku, rcvpkt->buf, length);
+    sku[length] = '\0';
+    values = String(sku);
+  }
+  if(rcvpkt) free(rcvpkt);
+  return values;
+}
+
+void * DFRobot_Atmospherlum::recvPacket(uint8_t cmd, uint8_t *errorCode){
+  if(cmd > CMD_END){
+    DBG("cmd is error!");
+    if(errorCode) *errorCode = ERR_CODE_CMD_INVAILED; //There is no this command
+    return NULL;
+  }
+  
+  sCmdRecvPkt_t recvPkt;
+  pCmdRecvPkt_t recvPktPtr = NULL;
+  uint16_t length = 0;
+  uint32_t t = millis();
+  while(millis() - t < _timeout/*time_ms*/){
+    recvData(&recvPkt.status, 1);
+    switch(recvPkt.status){
+      case STATUS_SUCCESS:
+      case STATUS_FAILED:
+      {
+        recvData(&recvPkt.cmd, 1);
+        if(recvPkt.cmd != cmd){
+          //reset(cmd);
+          recvFlush();
+          if(errorCode) *errorCode = ERR_CODE_RES_PKT; //Response packet error
+          DBG("Response pkt is error!");
+          return NULL;
+        }
+        recvData(&recvPkt.lenL, 2);
+        length = (recvPkt.lenH << 8) | recvPkt.lenL;
+        recvPktPtr = (pCmdRecvPkt_t)malloc(sizeof(sCmdRecvPkt_t) + length);
+        if(recvPktPtr == NULL){
+          //reset(cmd);
+          if(errorCode) *errorCode = ERR_CODE_M_NO_SPACE; //Insufficient memory of I2C controller(master)
+          return NULL;
+        }
+        memcpy(recvPktPtr, &recvPkt, sizeof(sCmdRecvPkt_t));
+      
+        if(length)recvData(recvPktPtr->buf, length);
+        if(errorCode) *errorCode = ERR_CODE_NONE;
+        //DBG(millis() - t);
+        return recvPktPtr;
+      }
+    }
+    delay(50);
+    yield();
+  }
+  if(errorCode) *errorCode = ERR_CODE_RES_TIMEOUT; //Receive packet timeout
+  DBG("Time out!");
+  DBG(millis() - t);
+  return NULL;
+}
+
+void DFRobot_Atmospherlum::setTime(uint16_t year,uint8_t month,uint8_t day,uint8_t hour,uint8_t minute,uint8_t second){
+  uint16_t length = 7;
+  uint8_t errorCode;
+  pCmdSendPkt_t sendpkt = NULL;
+  sendpkt = (pCmdSendPkt_t)malloc(sizeof(sCmdSendPkt_t) + length);
+  if(sendpkt == NULL) return "";
+  sendpkt->cmd = CMD_SET_TIME;
+  sendpkt->argsNumL = length & 0xFF;
+  sendpkt->argsNumH = (length >> 8) & 0xFF;
+  sendpkt->args[0] = (year-2000);
+  sendpkt->args[1] = month;
+  sendpkt->args[2] = day;
+  sendpkt->args[3] = 0;
+  sendpkt->args[4] = hour;
+  sendpkt->args[5] = minute;
+  sendpkt->args[6] = second;
+    
+ 
+  length += sizeof(sCmdSendPkt_t);
+  sendPacket(sendpkt, length, true);
+  free(sendpkt);
+  pCmdRecvPkt_t rcvpkt = (pCmdRecvPkt_t)recvPacket(CMD_SET_TIME, &errorCode);
+  if((rcvpkt != NULL) && (rcvpkt->status == STATUS_FAILED)) errorCode = rcvpkt->buf[0];
+  if((rcvpkt != NULL) && (rcvpkt->status == STATUS_SUCCESS)){
+    length = (rcvpkt->lenH << 8) | rcvpkt->lenL;
+  }
+  if(rcvpkt) free(rcvpkt);
+}
+
+String DFRobot_Atmospherlum::getTimeStamp(){
+  String values = "";
+  uint8_t errorCode;
+  uint16_t length = 0;
+
+  pCmdSendPkt_t sendpkt = NULL;
+  sendpkt = (pCmdSendPkt_t)malloc(sizeof(sCmdSendPkt_t) + length);
+  if(sendpkt == NULL) return "";
+  sendpkt->cmd = CME_GET_TIME;
+  sendpkt->argsNumL = 0;
+  sendpkt->argsNumH = 0;
+ 
+  length += sizeof(sCmdSendPkt_t);
+  sendPacket(sendpkt, length, true);
+  free(sendpkt);
+  
+  pCmdRecvPkt_t rcvpkt = (pCmdRecvPkt_t)recvPacket(CME_GET_TIME, &errorCode);
+  if((rcvpkt != NULL) && (rcvpkt->status == STATUS_FAILED)) errorCode = rcvpkt->buf[0];
+  if((rcvpkt != NULL) && (rcvpkt->status == STATUS_SUCCESS)){
+    length = (rcvpkt->lenH << 8) | rcvpkt->lenL;
+    char sku[length + 1];
+    memcpy(sku, rcvpkt->buf, length);
+    sku[length] = '\0';
+    values = String(sku);
+  }
+  if(rcvpkt) free(rcvpkt);
+  return values;
+}
+
+DFRobot_Atmospherlum::DFRobot_Atmospherlum()
+  :_timeout(DEBUG_TIMEOUT_MS){}
+
+DFRobot_Atmospherlum::~DFRobot_Atmospherlum(){}
+
+int DFRobot_Atmospherlum::begin(uint32_t freq){
+  return init(freq);
+}
+DFRobot_Atmospherlum_I2C::DFRobot_Atmospherlum_I2C(uint8_t addr, TwoWire *pWire)
+  :DFRobot_Atmospherlum(),_pWire(pWire),_addr(addr){
+  
+}
+
+DFRobot_Atmospherlum_I2C::~DFRobot_Atmospherlum_I2C(){}
+
+int DFRobot_Atmospherlum_I2C::init(uint32_t freq){
+  if (_pWire == NULL) return -1;
+  _pWire->begin();
+  _pWire->setClock(freq);
+  _pWire->beginTransmission(_addr);
+  if(_pWire->endTransmission() != 0) return -2;
+  return 0;
+}
+
+void DFRobot_Atmospherlum_I2C::sendPacket(void *pkt, int length, bool stop){
+  uint8_t *pBuf = (uint8_t *)pkt;
+  int remain = length;
+  if((pkt == NULL) || (length == 0)) return;
+  _pWire->beginTransmission(_addr);
+  while(remain){
+    length = (remain > IIC_MAX_TRANSFER) ? IIC_MAX_TRANSFER : remain;
+    _pWire->write(pBuf, length);
+    remain -= length;
+    pBuf += length;
+#if defined(ESP32)
+    if(remain) _pWire->endTransmission(true);
+#else
+    if(remain) _pWire->endTransmission(false);
+#endif
+  }
+  _pWire->endTransmission(stop);
+}
+
+int DFRobot_Atmospherlum_I2C::recvData(void *data, int len){
+  uint8_t *pBuf = (uint8_t *)data;
+  int remain = len;
+  int total = 0;
+  if(pBuf == NULL){
+    DBG("pBuf ERROR!! : null pointer");
+    return 0;
+  }
+  
+  while(remain){
+    len = remain > I2C_ACHE_MAX_LEN ? I2C_ACHE_MAX_LEN : remain;
+    remain -= len;
+#if defined(ESP32)
+    if(remain) _pWire->requestFrom(_addr, len, true);
+#else
+    if(remain) _pWire->requestFrom(_addr, len, false);
+#endif
+    else _pWire->requestFrom(_addr, len, true);
+    for(int i = 0; i < len; i++){
+      pBuf[i] = _pWire->read();
+      //DBG(pBuf[i],HEX);
+      yield();
+    }
+    pBuf += len;
+    total += len;
+  }
+  return total;
+}
+
+void DFRobot_Atmospherlum_I2C::recvFlush(){
+  while(_pWire->available()){
+    _pWire->read();
+    yield();
   }
 }
-uint8_t DFRobot_Atmospherlum::writeReg(uint8_t reg, void *pBuf, size_t size)
-{
-  uint8_t *_pBuf = (uint8_t*)pBuf;
 
-  uint8_t ret = 0;
-  if(_pWire){
-    _pWire->beginTransmission(_addr);
-    _pWire->write(0x55);
-    // _pWire->write(CMD_WRITE_MULTI_HOLDING);
-    // _pWire->write(0);
-    // _pWire->write(reg);
-    // _pWire->write(0);
-    // _pWire->write(size);
-    // _pWire->write(size * 2);
-    for(uint8_t i = 0; i < size * 2; i++){
-      _pWire->write(_pBuf[i]);
-    }
-    _pWire->endTransmission();
-  }else{
-    ret = writeHoldingRegister(_addr,reg,_pBuf,size);
+void DFRobot_Atmospherlum_I2C::sendFlush(){
+  _pWire->flush();
+}
+
+DFRobot_Atmospherlum_UART::DFRobot_Atmospherlum_UART(Stream *s)
+:DFRobot_Atmospherlum()
+{
+  _s = s;
+}
+DFRobot_Atmospherlum_UART::~DFRobot_Atmospherlum_UART(){}
+
+int DFRobot_Atmospherlum_UART::init(uint32_t freq){
+  //_s->begin(115200);
+  return 0;
+}
+
+void DFRobot_Atmospherlum_UART::sendPacket(void *pkt, int length, bool stop){
+  uint8_t *pBuf = (uint8_t *)pkt;
+  int remain = length;
+  if((pkt == NULL) || (length == 0)) return;
+  for(uint8_t i = 0; i < remain; i++){
+    _s->write(pBuf[i]);
+    delay(1);
   }
-  return ret;
+   
+}
+
+int DFRobot_Atmospherlum_UART::recvData(void *data, int len)
+{
+  // uint8_t *pBuf = (uint8_t *)data;
+  // int remain = len;
+  // int total = 0;
+  // uint32_t firstTime = 0;
+  // while(1){
+  //     if(_s->available()!= 0){
+  //       firstTime = millis();
+  //       pBuf[total] = _s->read();
+  //       total++;
+  //       if(remain == total){
+  //         // for(int i = 0; i < len; i++){
+  //         //   Serial.print(pBuf[i]);
+  //         // }
+  //         return total;
+  //       }
+  //     }
+  //   if((millis() - firstTime) > 30000){
+  //     DBG("serial time out");
+  //     return total;
+  //   }
+  //   delay(1);
+  // }
+
+  uint8_t *pBuf = (uint8_t *)data;
+  int remain = len;
+  int total = 0;
+  if(pBuf == NULL){
+    DBG("pBuf ERROR!! : null pointer");
+    return 0;
+  }
+  
+  while(remain){
+    len = remain > I2C_ACHE_MAX_LEN ? I2C_ACHE_MAX_LEN : remain;
+    remain -= len;
+    _s->readBytes(pBuf, len);
+    pBuf += len;
+    total += len;
+  }
+  return total;
+}
+
+void DFRobot_Atmospherlum_UART::recvFlush()
+{
+   while(_s->available()){
+    _s->read();
+    yield();
+  }
+}
+void DFRobot_Atmospherlum_UART::sendFlush(){
+  
 }
