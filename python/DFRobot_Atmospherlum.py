@@ -21,12 +21,12 @@ class DFRobot_Atmospherlum:
 
   DEBUG_TIMEOUT_MS  =  2500
 
-  CMD_GET_DATA            =    0x00 #鏍规嵁浼犺繃鏉ョ殑鍚嶇О杩斿洖鍚嶅瓧
-  CMD_GET_ALL_DATA         =   0x01 #鑾峰彇鏉胯浇鍏ㄩ儴浼犳劅鍣ㄦ暟鎹?
-  CMD_SET_TIME             =   0x02 #璁剧疆鏉胯浇RTC鏃堕棿
+  CMD_GET_DATA            =    0x00 #閺嶈宓佹导鐘虹箖閺夈儳娈戦崥宥囆炴潻鏂挎礀閸氬秴鐡?
+  CMD_GET_ALL_DATA         =   0x01 #閼惧嘲褰囬弶鑳祰閸忋劑鍎存导鐘冲妳閸ｃ劍鏆熼幑?
+  CMD_SET_TIME             =   0x02 #鐠佸墽鐤嗛弶鑳祰RTC閺冨爼妫?
   CME_GET_TIME             =   0x03
-  CMD_GET_UNIT             =   0x04 #鑾峰彇浼犳劅鍣ㄥ崟浣?
-  CMD_GET_VERSION          =   0x05 #鑾峰彇鐗堟湰鍙?
+  CMD_GET_UNIT             =   0x04 #閼惧嘲褰囨导鐘冲妳閸ｃ劌宕熸担?
+  CMD_GET_VERSION          =   0x05 #閼惧嘲褰囬悧鍫熸拱閸?
   IIC_MAX_TRANSFER         =   32    #Maximum transferred data via I2C
   I2C_ACHE_MAX_LEN         =   32
   CMD_END         =    CMD_GET_VERSION
@@ -185,7 +185,7 @@ class DFRobot_Atmospherlum:
     pkt[self.INDEX_CMD]        = self.CME_GET_TIME
     pkt[self.INDEX_ARGS_NUM_L] = length & 0xFF
     pkt[self.INDEX_ARGS_NUM_H] = (length >> 8) & 0xFF
-
+    self._send_packet(pkt)
     recv_pkt = self._recv_packet(self.CME_GET_TIME)
     if (len(recv_pkt) >= 5) and (recv_pkt[self.INDEX_RES_ERR] == self.ERR_CODE_NONE and recv_pkt[self.INDEX_RES_STATUS] == self.STATUS_SUCCESS):
       length = recv_pkt[self.INDEX_RES_LEN_L] | (recv_pkt[self.INDEX_RES_LEN_H] << 8)
