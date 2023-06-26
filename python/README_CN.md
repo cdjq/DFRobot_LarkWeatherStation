@@ -38,7 +38,6 @@ def begin(self):
       @n       0      初始化成功
       @n      others  初始化失败
     '''
-    return 0
   def get_value(self, keys):
     '''!
       @brief 获取传感器数据
@@ -51,30 +50,6 @@ def begin(self):
       @brief 获取数据单位
       @param keys  需要获取的数据
       @return 返回获取后的单位
-    '''
-  
-  def set_radius(self,radius):
-    '''!
-      @brief 设置风杯半径
-      @param radius 半径
-    '''
-    
-  def set_speed1(self,speed1):
-    '''!
-      @brief 设置标准风速1
-      @param speed1 标准风速
-    '''
-    
-  def set_speed2(self,speed2):
-    '''!
-      @brief 设置标准风速2
-      @param speed2 标准风速2
-    '''
-    
-  def calibration_speed(self):
-    '''!
-      @brief 设置标准风速2
-      @param speed2 标准风速2
     '''
 
   def get_information(self, state):

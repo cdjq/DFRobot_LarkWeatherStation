@@ -56,11 +56,44 @@ public:
    * @n      -2  Check if the hardware connection is correct
    */
   int begin(uint32_t freq = 100000);
-
+  /**
+   * @brief 获取传感器数据
+   * 
+   * @param keys 需要获取的数据
+   * @return String 返回获取的数据
+   */
   String getValue(char *keys);
+  /**
+   * @brief 获取数据单位
+   * 
+   * @param keys 需要获取的数据
+   * @return String 返回获取后的单位
+   */
   String getUnit(char *keys);
+  /**
+   * @brief 获取全部数据
+   * 
+   * @param state true:加入时间戳 false:不加时间戳
+   * @return String 返回获取的全部数据
+   */
   String getInformation(bool state);
-  void setTime(uint16_t year,uint8_t month,uint8_t day,uint8_t hour,uint8_t minute,uint8_t second);
+  /**
+   * @brief 设置RTC时间
+   * 
+   * @param year 年
+   * @param month 月
+   * @param day 日
+   * @param hour 时
+   * @param minute 分
+   * @param second 秒
+   * @return 返回设置状态
+   */
+  uint8_t setTime(uint16_t year,uint8_t month,uint8_t day,uint8_t hour,uint8_t minute,uint8_t second);
+  /**
+   * @brief 获取RTC时间
+   * 
+   * @return 返回获取的RTC时间
+   */
   String getTimeStamp(void);
 
 protected:

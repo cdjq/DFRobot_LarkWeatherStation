@@ -80,30 +80,6 @@
    * @return 返回获取的RTC时间
    */
   String getTimeStamp(void);
-  /**
-   * @brief 设置风杯半径
-   * 
-   * @param radius 风杯半径
-   * @return int 返回设置状态
-   */
-  int setRadius(float radius);
-  /**
-   * @brief 设置标准风速1
-   * 
-   * @param 标准风速1数据
-   */
-  void setSpeed1(float speed);
-  /**
-   * @brief 设置标准风速2
-   * 
-   * @param 标准风速2数据
-   */
-  void setSpeed2(float speed);
-  /**
-   * @brief 开始计算数据
-   * 
-   */
-  void calibrationSpeed(void);
 ```
 
 ## 兼容性
