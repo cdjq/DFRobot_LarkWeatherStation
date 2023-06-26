@@ -1,5 +1,5 @@
-#ifndef _DFROBOT_ATMOSPHERLUM_H_
-#define _DFROBOT_ATMOSPHERLUM_H_
+#ifndef _DFROBOT_LARKWEATHERSTATION_H_
+#define _DFROBOT_LARKWEATHERSTATION_H_
 
 #include "Arduino.h"
 #include "Wire.h"
@@ -30,20 +30,20 @@ typedef struct{
   }sTime_t;
 
 
-class DFRobot_Atmospherlum{
+class DFRobot_LarkWeatherStation{
 public:
 
   /**
-   * @fn DFRobot_RP2040_SCI
+   * @fn DFRobot_LarkWeatherStation
    * @brief DFRobot_RP2040_SCI Class Constructor.
    */
-  DFRobot_Atmospherlum();
+  DFRobot_LarkWeatherStation();
 
   /**
-   * @fn  ~DFRobot_RP2040_SCI
+   * @fn  ~DFRobot_LarkWeatherStation
    * @brief DFRobot_RP2040_SCI Class Destructor. 
    */
-  ~DFRobot_Atmospherlum();
+  ~DFRobot_LarkWeatherStation();
 
   /**
    * @fn begin
@@ -122,13 +122,13 @@ private:
   uint32_t _timeout; ///< Time of receive timeout
 };
 
-class DFRobot_Atmospherlum_I2C:public DFRobot_Atmospherlum {
+class DFRobot_LarkWeatherStation_I2C:public DFRobot_LarkWeatherStation {
 
 
 public:
 
-DFRobot_Atmospherlum_I2C(uint8_t addr = 0x42, TwoWire *pWire = &Wire);
-~DFRobot_Atmospherlum_I2C();
+DFRobot_LarkWeatherStation_I2C(uint8_t addr = 0x42, TwoWire *pWire = &Wire);
+~DFRobot_LarkWeatherStation_I2C();
   protected:
   /**
    * @fn init
@@ -176,12 +176,12 @@ private:
   uint8_t _addr;
 };
 
-class DFRobot_Atmospherlum_UART:public DFRobot_Atmospherlum {
+class DFRobot_LarkWeatherStation_UART:public DFRobot_LarkWeatherStation {
 
 public:
 
-DFRobot_Atmospherlum_UART(Stream *s);
-~DFRobot_Atmospherlum_UART();
+DFRobot_LarkWeatherStation_UART(Stream *s);
+~DFRobot_LarkWeatherStation_UART();
 protected:
    /**
    * @fn init

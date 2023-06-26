@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 import serial
 import time
 import smbus
@@ -7,29 +8,30 @@ import RPi.GPIO as GPIO
 import math
 import serial
 
-
-
-
-
-
 I2C_MODE                  = 0x01
 UART_MODE                 = 0x02
 DEV_ADDRESS               = 0x42
 
 
-class DFRobot_Atmospherlum:
+class DFRobot_LarkWeatherStation:
 
-  DEBUG_TIMEOUT_MS  =  2500
+  DEBUG_TIMEOUT_MS  =  2
 
-  CMD_GET_DATA            =    0x00 #閺嶈宓佹导鐘虹箖閺夈儳娈戦崥宥囆炴潻鏂挎礀閸氬秴鐡?
-  CMD_GET_ALL_DATA         =   0x01 #閼惧嘲褰囬弶鑳祰閸忋劑鍎存导鐘冲妳閸ｃ劍鏆熼幑?
-  CMD_SET_TIME             =   0x02 #鐠佸墽鐤嗛弶鑳祰RTC閺冨爼妫?
+  CMD_GET_DATA            =    0x00 #根据传过来的名称返回名字
+  CMD_GET_ALL_DATA         =   0x01 #获取板载全部传感器数据
+  CMD_SET_TIME             =   0x02 #设置板载RTC时间
   CME_GET_TIME             =   0x03
-  CMD_GET_UNIT             =   0x04 #閼惧嘲褰囨导鐘冲妳閸ｃ劌宕熸担?
-  CMD_GET_VERSION          =   0x05 #閼惧嘲褰囬悧鍫熸拱閸?
+  CMD_GET_UNIT             =   0x04 #获取传感器单位
+  CMD_GET_VERSION          =   0x05 #获取版本号
+  CMD_RESET_DATA           =   0x06
+  CMD_RADIUS_DATA          =    0x07#设置风杯半径
+  CMD_SPEED1_DATA          =   0x08#设置标准风速1
+  CMD_SPEED2_DATA          =   0x09#设置标准风速2
+  CMD_CALIBRATOR           =   0x0a#开始校准计算
+
   IIC_MAX_TRANSFER         =   32    #Maximum transferred data via I2C
   I2C_ACHE_MAX_LEN         =   32
-  CMD_END         =    CMD_GET_VERSION
+  CMD_END         =    CMD_CALIBRATOR
 
 
   ERR_CODE_NONE           =    0x00 #Normal communication 
@@ -71,19 +73,17 @@ class DFRobot_Atmospherlum:
   
   def begin(self):
     '''!
-      @brief Initalize the SCI Acquisition Module, mainly for initializing communication interface
-      @param freq Set communication frequency
-      @return int Init status
-      @n       0      Init successful
-      @n      others  Init failed
+      @brief 初始化SCI采集模块，主要用于初始化通信接口
+      @return int 初始化状态
+      @n       0      初始化成功
+      @n      others  初始化失败
     '''
     return 0
   def get_value(self, keys):
     '''!
-      @brief Get attribute data values named keys of all sensors connected to all ports. Separate attribute values using ","
-      @param keys  Sensor attribute name
-      @return Attribute data values named keys of all sensors connected to all ports. Separate attribute values using ","
-      @n For example, Temp_Air:  28.65,28.65
+      @brief 获取传感器数据
+      @param keys  需要获取的数据
+      @return 返回获取的数据
     '''
     rslt = ""
     length = len(keys)
@@ -96,7 +96,7 @@ class DFRobot_Atmospherlum:
       pkt[self.INDEX_ARGS + i] = ord(c)
       i += 1
     self._send_packet(pkt)
-
+    #time.sleep(0.1)
     recv_pkt = self._recv_packet(self.CMD_GET_DATA)
     if (len(recv_pkt) >= 5) and (recv_pkt[self.INDEX_RES_ERR] == self.ERR_CODE_NONE and recv_pkt[self.INDEX_RES_STATUS] == self.STATUS_SUCCESS):
       length = recv_pkt[self.INDEX_RES_LEN_L] | (recv_pkt[self.INDEX_RES_LEN_H] << 8)
@@ -107,10 +107,9 @@ class DFRobot_Atmospherlum:
 
   def get_unit(self, keys):
     '''!
-      @brief Get attribute data values named keys of all sensors connected to all ports. Separate attribute values using ","
-      @param keys  Sensor attribute name
-      @return Attribute data values named keys of all sensors connected to all ports. Separate attribute values using ","
-      @n For example, Temp_Air:  28.65,28.65
+      @brief 获取数据单位
+      @param keys  需要获取的数据
+      @return 返回获取后的单位
     '''
     rslt = ""
     length = len(keys)
@@ -123,7 +122,7 @@ class DFRobot_Atmospherlum:
       pkt[self.INDEX_ARGS + i] = ord(c)
       i += 1
     self._send_packet(pkt)
-
+    #time.sleep(0.1)
     recv_pkt = self._recv_packet(self.CMD_GET_UNIT)
     if (len(recv_pkt) >= 5) and (recv_pkt[self.INDEX_RES_ERR] == self.ERR_CODE_NONE and recv_pkt[self.INDEX_RES_STATUS] == self.STATUS_SUCCESS):
       length = recv_pkt[self.INDEX_RES_LEN_L] | (recv_pkt[self.INDEX_RES_LEN_H] << 8)
@@ -131,13 +130,86 @@ class DFRobot_Atmospherlum:
         for data in recv_pkt[self.INDEX_RES_DATA:]:
           rslt += chr(data)
     return rslt
+  
+  def set_radius(self,radius):
+    '''!
+      @brief 设置风杯半径
+      @param radius 半径
+    '''
+    length = 2
+    data = radius * 100
+    pkt = [0] * (3 + length)
+    pkt[self.INDEX_CMD]        = self.CMD_RADIUS_DATA
+    pkt[self.INDEX_ARGS_NUM_L] = length & 0xFF
+    pkt[self.INDEX_ARGS_NUM_H] = (length >> 8) & 0xFF
+    pkt[self.INDEX_ARGS + 0]       = data >> 8
+    pkt[self.INDEX_ARGS + 1]       = data & 0xff
+    self._send_packet(pkt)
+    time.sleep(2)
+    recv_pkt = self._recv_packet(self.CMD_RADIUS_DATA)
+    if (len(recv_pkt) >= 5) and (recv_pkt[self.INDEX_RES_ERR] == self.ERR_CODE_NONE and recv_pkt[self.INDEX_RES_STATUS] == self.STATUS_SUCCESS):
+      length = recv_pkt[self.INDEX_RES_LEN_L] | (recv_pkt[self.INDEX_RES_LEN_H] << 8)
+      return 1
+    
+  def set_speed1(self,speed1):
+    '''!
+      @brief 设置标准风速1
+      @param speed1 标准风速
+    '''
+    length = 2
+    data = speed1 * 100
+    pkt = [0] * (3 + length)
+    pkt[self.INDEX_CMD]        = self.CMD_SPEED1_DATA
+    pkt[self.INDEX_ARGS_NUM_L] = length & 0xFF
+    pkt[self.INDEX_ARGS_NUM_H] = (length >> 8) & 0xFF
+    pkt[self.INDEX_ARGS + 0]       = data >> 8
+    pkt[self.INDEX_ARGS + 1]       = data & 0xff
+    self._send_packet(pkt)
+    time.sleep(10)
+    recv_pkt = self._recv_packet(self.CMD_SPEED1_DATA)
+    if (len(recv_pkt) >= 5) and (recv_pkt[self.INDEX_RES_ERR] == self.ERR_CODE_NONE and recv_pkt[self.INDEX_RES_STATUS] == self.STATUS_SUCCESS):
+      length = recv_pkt[self.INDEX_RES_LEN_L] | (recv_pkt[self.INDEX_RES_LEN_H] << 8)
+    
+  def set_speed2(self,speed2):
+    '''!
+      @brief 设置标准风速2
+      @param speed2 标准风速2
+    '''
+    length = 2
+    data = speed2 * 100
+    pkt = [0] * (3 + length)
+    pkt[self.INDEX_CMD]        = self.CMD_SPEED2_DATA
+    pkt[self.INDEX_ARGS_NUM_L] = length & 0xFF
+    pkt[self.INDEX_ARGS_NUM_H] = (length >> 8) & 0xFF
+    pkt[self.INDEX_ARGS + 0]       = data >> 8
+    pkt[self.INDEX_ARGS + 1]       = data & 0xff
+    self._send_packet(pkt)
+    time.sleep(10)
+    recv_pkt = self._recv_packet(self.CMD_SPEED2_DATA)
+    if (len(recv_pkt) >= 5) and (recv_pkt[self.INDEX_RES_ERR] == self.ERR_CODE_NONE and recv_pkt[self.INDEX_RES_STATUS] == self.STATUS_SUCCESS):
+      length = recv_pkt[self.INDEX_RES_LEN_L] | (recv_pkt[self.INDEX_RES_LEN_H] << 8)
+    
+  def calibration_speed(self):
+    '''!
+      @brief 设置标准风速2
+      @param speed2 标准风速2
+    '''
+    length = 0
+    pkt = [0] * (3 + length)
+    pkt[self.INDEX_CMD]        = self.CMD_CALIBRATOR
+    pkt[self.INDEX_ARGS_NUM_L] = length & 0xFF
+    pkt[self.INDEX_ARGS_NUM_H] = (length >> 8) & 0xFF
+    self._send_packet(pkt)
+    time.sleep(10)
+    recv_pkt = self._recv_packet(self.CMD_CALIBRATOR)
+    if (len(recv_pkt) >= 5) and (recv_pkt[self.INDEX_RES_ERR] == self.ERR_CODE_NONE and recv_pkt[self.INDEX_RES_STATUS] == self.STATUS_SUCCESS):
+      length = recv_pkt[self.INDEX_RES_LEN_L] | (recv_pkt[self.INDEX_RES_LEN_H] << 8)
 
   def get_information(self, state):
     '''!
-      @brief Get attribute data values named keys of all sensors connected to all ports. Separate attribute values using ","
-      @param keys  Sensor attribute name
-      @return Attribute data values named keys of all sensors connected to all ports. Separate attribute values using ","
-      @n For example, Temp_Air:  28.65,28.65
+      @brief 获取全部数据
+      @param state true:加入时间戳 false:不加时间戳
+      @return String 返回获取的全部数据
     '''
     rslt = ""
     length = 1
@@ -150,7 +222,7 @@ class DFRobot_Atmospherlum:
     else:
       pkt[self.INDEX_ARGS]       = 0
     self._send_packet(pkt)
-
+    time.sleep(0.1)
     recv_pkt = self._recv_packet(self.CMD_GET_ALL_DATA)
     if (len(recv_pkt) >= 5) and (recv_pkt[self.INDEX_RES_ERR] == self.ERR_CODE_NONE and recv_pkt[self.INDEX_RES_STATUS] == self.STATUS_SUCCESS):
       length = recv_pkt[self.INDEX_RES_LEN_L] | (recv_pkt[self.INDEX_RES_LEN_H] << 8)
@@ -160,6 +232,15 @@ class DFRobot_Atmospherlum:
     return rslt
 
   def set_time(self, year, month, day,hour, minute, second):
+    '''!
+      @brief 设置RTC时间
+      @param year 年
+      @param month 月
+      @param day 日
+      @param hour 时
+      @param minute 分
+      @param second 秒
+    '''
     length = 7
     pkt = [0] * (3 + length)
     pkt[self.INDEX_CMD]        = self.CMD_SET_TIME
@@ -173,12 +254,15 @@ class DFRobot_Atmospherlum:
     pkt[self.INDEX_ARGS + self.INDEX_MINUTE]       = minute
     pkt[self.INDEX_ARGS + self.INDEX_SECOND]       = second
     self._send_packet(pkt)
-
+    time.sleep(0.1)
     recv_pkt = self._recv_packet(self.CMD_SET_TIME)
     if (len(recv_pkt) >= 5) and (recv_pkt[self.INDEX_RES_ERR] == self.ERR_CODE_NONE and recv_pkt[self.INDEX_RES_STATUS] == self.STATUS_SUCCESS):
       length = recv_pkt[self.INDEX_RES_LEN_L] | (recv_pkt[self.INDEX_RES_LEN_H] << 8)
 
   def get_time_stamp(self):
+    '''!
+      @brief 获取RTC时间
+    '''
     rslt = ""
     length = 0
     pkt = [0] * (3 + length)
@@ -186,6 +270,7 @@ class DFRobot_Atmospherlum:
     pkt[self.INDEX_ARGS_NUM_L] = length & 0xFF
     pkt[self.INDEX_ARGS_NUM_H] = (length >> 8) & 0xFF
     self._send_packet(pkt)
+    time.sleep(0.1)
     recv_pkt = self._recv_packet(self.CME_GET_TIME)
     if (len(recv_pkt) >= 5) and (recv_pkt[self.INDEX_RES_ERR] == self.ERR_CODE_NONE and recv_pkt[self.INDEX_RES_STATUS] == self.STATUS_SUCCESS):
       length = recv_pkt[self.INDEX_RES_LEN_L] | (recv_pkt[self.INDEX_RES_LEN_H] << 8)
@@ -211,29 +296,44 @@ class DFRobot_Atmospherlum:
     while time.time() - t < self.DEBUG_TIMEOUT_MS:
       status = self._recv_data(1)[0]
       #print(status)
-      if status == self.STATUS_SUCCESS or status == self.STATUS_FAILED:
-        command = self._recv_data(1)[0]
-        #print("command=%x cmd=%x"%(command,cmd))
-        if command != cmd:
-          rslt[0] = self.ERR_CODE_RES_PKT
-          print("Response pkt is error!")
-          return rslt
-        lenL = self._recv_data(2)
-        length = (lenL[1] << 2) | lenL[0]
-        #print("length=%x length=%d"%(length,length))
-        rslt[0] = self.ERR_CODE_NONE
-        rslt = rslt + [status, command, lenL[0], lenL[1]]
-        if length:
-          rslt = rslt + self._recv_data(length)
-        #print(rslt)
-        #print("time: %f"%(time.time() - t))
-        return rslt
-      time.sleep(0.05)
+      if status != 0xff:
+        if status == 0xD3:
+          self._reset_data()
+          time.sleep(0.2)
+        else:
+          if status == self.STATUS_SUCCESS or status == self.STATUS_FAILED:
+            command = self._recv_data(1)[0]
+            #print("command=%x cmd=%x"%(command,cmd))
+            if command != cmd:
+              rslt[0] = self.ERR_CODE_RES_PKT
+              print("Response pkt is error!")
+              return rslt
+            lenL = self._recv_data(2)
+            length = (lenL[1] << 2) | lenL[0]
+            #print("length=%x length=%d"%(length,length))
+            rslt[0] = self.ERR_CODE_NONE
+            rslt = rslt + [status, command, lenL[0], lenL[1]]
+            if length:
+              rslt = rslt + self._recv_data(length)
+            #print(rslt)
+            #print("time: %f"%(time.time() - t))
+            return rslt
+      time.sleep(0.1)
     print("time out: %f"%(time.time() - t))
     return [self.ERR_CODE_RES_TIMEOUT]
+    
+  def _reset_data(self):
+    length = 0
+    pkt = [0] * (3 + length)
+    pkt[self.INDEX_CMD]        = self.CMD_RESET_DATA
+    pkt[self.INDEX_ARGS_NUM_L] = 0
+    pkt[self.INDEX_ARGS_NUM_H] = 0
+    self._send_packet(pkt)
+    time.sleep(0.1)
+    
 
 
-class DFRobot_Atmospherlum_I2C(DFRobot_Atmospherlum):
+class DFRobot_LarkWeatherStation_I2C(DFRobot_LarkWeatherStation):
   def __init__(self,addr):
     '''!
       @brief DFRobot_SCI_IIC Constructor
@@ -244,7 +344,7 @@ class DFRobot_Atmospherlum_I2C(DFRobot_Atmospherlum):
     '''
     self._addr = addr
     self._bus = smbus.SMBus(1)
-    DFRobot_Atmospherlum.__init__(self)
+    DFRobot_LarkWeatherStation.__init__(self)
     
 
   def _send_packet(self, pkt):
@@ -275,7 +375,7 @@ class DFRobot_Atmospherlum_I2C(DFRobot_Atmospherlum):
       i += 1
     return rslt
 
-class DFRobot_Atmospherlum_UART(DFRobot_Atmospherlum):
+class DFRobot_LarkWeatherStation_UART(DFRobot_LarkWeatherStation):
   def __init__(self):
     '''!
       @brief DFRobot_SCI_IIC Constructor
@@ -287,7 +387,7 @@ class DFRobot_Atmospherlum_UART(DFRobot_Atmospherlum):
     self.ser = serial.Serial("/dev/ttyAMA0",115200)
     if self.ser.isOpen == False:
       self.ser.open()
-    DFRobot_Atmospherlum.__init__(self)
+    DFRobot_LarkWeatherStation.__init__(self)
   def _send_packet(self, pkt):
     '''!
       @brief Send data

@@ -1,19 +1,28 @@
+'''!
+  @file getData.ino
+  @brief 这是一个获取云雀数据的例程
+  @copyright    Copyright (c) 2010 DFRobot Co.Ltd (http://www.dfrobot.com)
+  @license      The MIT License (MIT)
+  @author       [TangJie](jie.tang@dfrobot.com)
+  @version      V1.0.0
+  @date         2023-06-8
+  @url         https://github.com/DFRobot/DFRobot_LarkWeatherStation
+'''
 from __future__ import print_function
 import sys
 import os
 sys.path.append("../")
 import time
-import RPi.GPIO as GPIO
 
-from DFRobot_Atmospherlum import *
+from DFRobot_LarkWeatherStation import *
 
 ctype=0
 
 ADDRESS = 0x42 
 
 
-#EDU0157 = DFRobot_Atmospherlum_I2C(ADDRESS)
-EDU0157 = DFRobot_Atmospherlum_UART()
+EDU0157 = DFRobot_LarkWeatherStation_I2C(ADDRESS)
+#EDU0157 = DFRobot_LarkWeatherStation_UART()
 def setup():
   while EDU0157.begin() != 0:
     print("Sensor initialize failed!!")

@@ -1,4 +1,4 @@
-#include "DFRobot_Atmospherlum.h"
+#include "DFRobot_LarkWeatherStation.h"
 
 #define DEBUG_TIMEOUT_MS    2500
 
@@ -44,7 +44,7 @@ typedef struct{
 }__attribute__ ((packed)) sCmdRecvPkt_t, *pCmdRecvPkt_t;
 
 
-String DFRobot_Atmospherlum::getValue(char *keys)
+String DFRobot_LarkWeatherStation::getValue(char *keys)
 {
   String values = "";
   uint8_t errorCode;
@@ -76,7 +76,7 @@ String DFRobot_Atmospherlum::getValue(char *keys)
   return values;
 
 }
-String DFRobot_Atmospherlum::getUnit(char *keys)
+String DFRobot_LarkWeatherStation::getUnit(char *keys)
 {
   String values = "";
   uint8_t errorCode;
@@ -109,7 +109,7 @@ String DFRobot_Atmospherlum::getUnit(char *keys)
   return values;
 }
 
-String DFRobot_Atmospherlum::getInformation(bool state)
+String DFRobot_LarkWeatherStation::getInformation(bool state)
 {
   String values = "";
   uint8_t errorCode;
@@ -145,7 +145,7 @@ String DFRobot_Atmospherlum::getInformation(bool state)
   return values;
 }
 
-void * DFRobot_Atmospherlum::recvPacket(uint8_t cmd, uint8_t *errorCode){
+void * DFRobot_LarkWeatherStation::recvPacket(uint8_t cmd, uint8_t *errorCode){
   if(cmd > CMD_END){
     DBG("cmd is error!");
     if(errorCode) *errorCode = ERR_CODE_CMD_INVAILED; //There is no this command
@@ -195,7 +195,7 @@ void * DFRobot_Atmospherlum::recvPacket(uint8_t cmd, uint8_t *errorCode){
   return NULL;
 }
 
-void DFRobot_Atmospherlum::setTime(uint16_t year,uint8_t month,uint8_t day,uint8_t hour,uint8_t minute,uint8_t second){
+void DFRobot_LarkWeatherStation::setTime(uint16_t year,uint8_t month,uint8_t day,uint8_t hour,uint8_t minute,uint8_t second){
   uint16_t length = 7;
   uint8_t errorCode;
   pCmdSendPkt_t sendpkt = NULL;
@@ -224,7 +224,7 @@ void DFRobot_Atmospherlum::setTime(uint16_t year,uint8_t month,uint8_t day,uint8
   if(rcvpkt) free(rcvpkt);
 }
 
-String DFRobot_Atmospherlum::getTimeStamp(){
+String DFRobot_LarkWeatherStation::getTimeStamp(){
   String values = "";
   uint8_t errorCode;
   uint16_t length = 0;
@@ -253,22 +253,22 @@ String DFRobot_Atmospherlum::getTimeStamp(){
   return values;
 }
 
-DFRobot_Atmospherlum::DFRobot_Atmospherlum()
+DFRobot_LarkWeatherStation::DFRobot_LarkWeatherStation()
   :_timeout(DEBUG_TIMEOUT_MS){}
 
-DFRobot_Atmospherlum::~DFRobot_Atmospherlum(){}
+DFRobot_LarkWeatherStation::~DFRobot_LarkWeatherStation(){}
 
-int DFRobot_Atmospherlum::begin(uint32_t freq){
+int DFRobot_LarkWeatherStation::begin(uint32_t freq){
   return init(freq);
 }
-DFRobot_Atmospherlum_I2C::DFRobot_Atmospherlum_I2C(uint8_t addr, TwoWire *pWire)
-  :DFRobot_Atmospherlum(),_pWire(pWire),_addr(addr){
+DFRobot_LarkWeatherStation_I2C::DFRobot_LarkWeatherStation_I2C(uint8_t addr, TwoWire *pWire)
+  :DFRobot_LarkWeatherStation(),_pWire(pWire),_addr(addr){
   
 }
 
-DFRobot_Atmospherlum_I2C::~DFRobot_Atmospherlum_I2C(){}
+DFRobot_LarkWeatherStation_I2C::~DFRobot_LarkWeatherStation_I2C(){}
 
-int DFRobot_Atmospherlum_I2C::init(uint32_t freq){
+int DFRobot_LarkWeatherStation_I2C::init(uint32_t freq){
   if (_pWire == NULL) return -1;
   _pWire->begin();
   _pWire->setClock(freq);
@@ -277,7 +277,7 @@ int DFRobot_Atmospherlum_I2C::init(uint32_t freq){
   return 0;
 }
 
-void DFRobot_Atmospherlum_I2C::sendPacket(void *pkt, int length, bool stop){
+void DFRobot_LarkWeatherStation_I2C::sendPacket(void *pkt, int length, bool stop){
   uint8_t *pBuf = (uint8_t *)pkt;
   int remain = length;
   if((pkt == NULL) || (length == 0)) return;
@@ -296,7 +296,7 @@ void DFRobot_Atmospherlum_I2C::sendPacket(void *pkt, int length, bool stop){
   _pWire->endTransmission(stop);
 }
 
-int DFRobot_Atmospherlum_I2C::recvData(void *data, int len){
+int DFRobot_LarkWeatherStation_I2C::recvData(void *data, int len){
   uint8_t *pBuf = (uint8_t *)data;
   int remain = len;
   int total = 0;
@@ -325,30 +325,30 @@ int DFRobot_Atmospherlum_I2C::recvData(void *data, int len){
   return total;
 }
 
-void DFRobot_Atmospherlum_I2C::recvFlush(){
+void DFRobot_LarkWeatherStation_I2C::recvFlush(){
   while(_pWire->available()){
     _pWire->read();
     yield();
   }
 }
 
-void DFRobot_Atmospherlum_I2C::sendFlush(){
+void DFRobot_LarkWeatherStation_I2C::sendFlush(){
   _pWire->flush();
 }
 
-DFRobot_Atmospherlum_UART::DFRobot_Atmospherlum_UART(Stream *s)
-:DFRobot_Atmospherlum()
+DFRobot_LarkWeatherStation_UART::DFRobot_LarkWeatherStation_UART(Stream *s)
+:DFRobot_LarkWeatherStation()
 {
   _s = s;
 }
-DFRobot_Atmospherlum_UART::~DFRobot_Atmospherlum_UART(){}
+DFRobot_LarkWeatherStation_UART::~DFRobot_LarkWeatherStation_UART(){}
 
-int DFRobot_Atmospherlum_UART::init(uint32_t freq){
+int DFRobot_LarkWeatherStation_UART::init(uint32_t freq){
   //_s->begin(115200);
   return 0;
 }
 
-void DFRobot_Atmospherlum_UART::sendPacket(void *pkt, int length, bool stop){
+void DFRobot_LarkWeatherStation_UART::sendPacket(void *pkt, int length, bool stop){
   uint8_t *pBuf = (uint8_t *)pkt;
   int remain = length;
   if((pkt == NULL) || (length == 0)) return;
@@ -359,7 +359,7 @@ void DFRobot_Atmospherlum_UART::sendPacket(void *pkt, int length, bool stop){
    
 }
 
-int DFRobot_Atmospherlum_UART::recvData(void *data, int len)
+int DFRobot_LarkWeatherStation_UART::recvData(void *data, int len)
 {
   // uint8_t *pBuf = (uint8_t *)data;
   // int remain = len;
@@ -402,13 +402,13 @@ int DFRobot_Atmospherlum_UART::recvData(void *data, int len)
   return total;
 }
 
-void DFRobot_Atmospherlum_UART::recvFlush()
+void DFRobot_LarkWeatherStation_UART::recvFlush()
 {
    while(_s->available()){
     _s->read();
     yield();
   }
 }
-void DFRobot_Atmospherlum_UART::sendFlush(){
+void DFRobot_LarkWeatherStation_UART::sendFlush(){
   
 }
