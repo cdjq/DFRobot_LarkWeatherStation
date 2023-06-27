@@ -6,9 +6,9 @@
 # Datatypes (KEYWORD1)
 #######################################
 
-DFRobot_Atmospherlum	KEYWORD1
-DFRobot_Atmospherlum_I2C	KEYWORD1
-DFRobot_Atmospherlum_UART	KEYWORD1
+DFRobot_LarkWeatherStation	KEYWORD1
+DFRobot_LarkWeatherStation_I2C	KEYWORD1
+DFRobot_LarkWeatherStation_UART	KEYWORD1
 
 #######################################
 # Methods and Functions (KEYWORD2)

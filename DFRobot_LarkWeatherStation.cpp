@@ -54,7 +54,7 @@ String DFRobot_LarkWeatherStation::getValue(char *keys)
 
   pCmdSendPkt_t sendpkt = NULL;
   sendpkt = (pCmdSendPkt_t)malloc(sizeof(sCmdSendPkt_t) + length);
-  if(sendpkt == NULL) return "";
+  if(sendpkt == NULL) return " ";
   sendpkt->cmd = CMD_GET_DATA;
   sendpkt->argsNumL = length & 0xFF;
   sendpkt->argsNumH = (length >> 8) & 0xFF;
@@ -86,7 +86,7 @@ String DFRobot_LarkWeatherStation::getUnit(char *keys)
 
   pCmdSendPkt_t sendpkt = NULL;
   sendpkt = (pCmdSendPkt_t)malloc(sizeof(sCmdSendPkt_t) + length);
-  if(sendpkt == NULL) return "";
+  if(sendpkt == NULL) return " ";
   sendpkt->cmd = CMD_GET_UNIT;
   sendpkt->argsNumL = length & 0xFF;
   sendpkt->argsNumH = (length >> 8) & 0xFF;
@@ -117,7 +117,7 @@ String DFRobot_LarkWeatherStation::getInformation(bool state)
 
   pCmdSendPkt_t sendpkt = NULL;
   sendpkt = (pCmdSendPkt_t)malloc(sizeof(sCmdSendPkt_t) + length);
-  if(sendpkt == NULL) return "";
+  if(sendpkt == NULL) return " ";
   sendpkt->cmd = CMD_GET_ALL_DATA;
   sendpkt->argsNumL = length & 0xFF;
   sendpkt->argsNumH = (length >> 8) & 0xFF;
@@ -195,12 +195,12 @@ void * DFRobot_LarkWeatherStation::recvPacket(uint8_t cmd, uint8_t *errorCode){
   return NULL;
 }
 
-void DFRobot_LarkWeatherStation::setTime(uint16_t year,uint8_t month,uint8_t day,uint8_t hour,uint8_t minute,uint8_t second){
+uint8_t DFRobot_LarkWeatherStation::setTime(uint16_t year,uint8_t month,uint8_t day,uint8_t hour,uint8_t minute,uint8_t second){
   uint16_t length = 7;
   uint8_t errorCode;
   pCmdSendPkt_t sendpkt = NULL;
   sendpkt = (pCmdSendPkt_t)malloc(sizeof(sCmdSendPkt_t) + length);
-  if(sendpkt == NULL) return "";
+  if(sendpkt == NULL) return 0;
   sendpkt->cmd = CMD_SET_TIME;
   sendpkt->argsNumL = length & 0xFF;
   sendpkt->argsNumH = (length >> 8) & 0xFF;
@@ -220,8 +220,11 @@ void DFRobot_LarkWeatherStation::setTime(uint16_t year,uint8_t month,uint8_t day
   if((rcvpkt != NULL) && (rcvpkt->status == STATUS_FAILED)) errorCode = rcvpkt->buf[0];
   if((rcvpkt != NULL) && (rcvpkt->status == STATUS_SUCCESS)){
     length = (rcvpkt->lenH << 8) | rcvpkt->lenL;
+    if(rcvpkt) free(rcvpkt);
+    DBG("set time");
+    return 1;
   }
-  if(rcvpkt) free(rcvpkt);
+  return 0;
 }
 
 String DFRobot_LarkWeatherStation::getTimeStamp(){
@@ -231,7 +234,7 @@ String DFRobot_LarkWeatherStation::getTimeStamp(){
 
   pCmdSendPkt_t sendpkt = NULL;
   sendpkt = (pCmdSendPkt_t)malloc(sizeof(sCmdSendPkt_t) + length);
-  if(sendpkt == NULL) return "";
+  if(sendpkt == NULL) return " ";
   sendpkt->cmd = CME_GET_TIME;
   sendpkt->argsNumL = 0;
   sendpkt->argsNumH = 0;

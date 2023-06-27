@@ -151,60 +151,6 @@ class DFRobot_LarkWeatherStation:
       length = recv_pkt[self.INDEX_RES_LEN_L] | (recv_pkt[self.INDEX_RES_LEN_H] << 8)
       return 1
     
-  def set_speed1(self,speed1):
-    '''!
-      @brief 设置标准风速1
-      @param speed1 标准风速
-    '''
-    length = 2
-    data = speed1 * 100
-    pkt = [0] * (3 + length)
-    pkt[self.INDEX_CMD]        = self.CMD_SPEED1_DATA
-    pkt[self.INDEX_ARGS_NUM_L] = length & 0xFF
-    pkt[self.INDEX_ARGS_NUM_H] = (length >> 8) & 0xFF
-    pkt[self.INDEX_ARGS + 0]       = data >> 8
-    pkt[self.INDEX_ARGS + 1]       = data & 0xff
-    self._send_packet(pkt)
-    time.sleep(10)
-    recv_pkt = self._recv_packet(self.CMD_SPEED1_DATA)
-    if (len(recv_pkt) >= 5) and (recv_pkt[self.INDEX_RES_ERR] == self.ERR_CODE_NONE and recv_pkt[self.INDEX_RES_STATUS] == self.STATUS_SUCCESS):
-      length = recv_pkt[self.INDEX_RES_LEN_L] | (recv_pkt[self.INDEX_RES_LEN_H] << 8)
-    
-  def set_speed2(self,speed2):
-    '''!
-      @brief 设置标准风速2
-      @param speed2 标准风速2
-    '''
-    length = 2
-    data = speed2 * 100
-    pkt = [0] * (3 + length)
-    pkt[self.INDEX_CMD]        = self.CMD_SPEED2_DATA
-    pkt[self.INDEX_ARGS_NUM_L] = length & 0xFF
-    pkt[self.INDEX_ARGS_NUM_H] = (length >> 8) & 0xFF
-    pkt[self.INDEX_ARGS + 0]       = data >> 8
-    pkt[self.INDEX_ARGS + 1]       = data & 0xff
-    self._send_packet(pkt)
-    time.sleep(10)
-    recv_pkt = self._recv_packet(self.CMD_SPEED2_DATA)
-    if (len(recv_pkt) >= 5) and (recv_pkt[self.INDEX_RES_ERR] == self.ERR_CODE_NONE and recv_pkt[self.INDEX_RES_STATUS] == self.STATUS_SUCCESS):
-      length = recv_pkt[self.INDEX_RES_LEN_L] | (recv_pkt[self.INDEX_RES_LEN_H] << 8)
-    
-  def calibration_speed(self):
-    '''!
-      @brief 设置标准风速2
-      @param speed2 标准风速2
-    '''
-    length = 0
-    pkt = [0] * (3 + length)
-    pkt[self.INDEX_CMD]        = self.CMD_CALIBRATOR
-    pkt[self.INDEX_ARGS_NUM_L] = length & 0xFF
-    pkt[self.INDEX_ARGS_NUM_H] = (length >> 8) & 0xFF
-    self._send_packet(pkt)
-    time.sleep(10)
-    recv_pkt = self._recv_packet(self.CMD_CALIBRATOR)
-    if (len(recv_pkt) >= 5) and (recv_pkt[self.INDEX_RES_ERR] == self.ERR_CODE_NONE and recv_pkt[self.INDEX_RES_STATUS] == self.STATUS_SUCCESS):
-      length = recv_pkt[self.INDEX_RES_LEN_L] | (recv_pkt[self.INDEX_RES_LEN_H] << 8)
-
   def get_information(self, state):
     '''!
       @brief 获取全部数据
