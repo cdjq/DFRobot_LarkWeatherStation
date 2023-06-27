@@ -39,11 +39,11 @@ void setup(void){
   #if MODESWITCH
   //Init MCU communication serial port
   #if defined(ARDUINO_AVR_UNO)||defined(ESP8266)
-    mySerial.begin(9600);
+    mySerial.begin(115200);
   #elif defined(ESP32)
-    Serial1.begin(9600, SERIAL_8N1, /*rx =*/D3, /*tx =*/D2);
+    Serial1.begin(115200, SERIAL_8N1, /*rx =*/D3, /*tx =*/D2);
   #else
-    Serial1.begin(9600);
+    Serial1.begin(115200);
   #endif
   #endif
   Serial.begin(115200);

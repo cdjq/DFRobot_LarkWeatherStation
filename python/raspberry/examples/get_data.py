@@ -1,6 +1,6 @@
 '''!
   @file getData.ino
-  @brief 这是一个获取云雀数据的例程
+  @brief This is a routine to get skylark data
   @copyright    Copyright (c) 2010 DFRobot Co.Ltd (http://www.dfrobot.com)
   @license      The MIT License (MIT)
   @author       [TangJie](jie.tang@dfrobot.com)
@@ -34,8 +34,8 @@ def setup():
   
 def loop():
   print("------------------")
-  print("Speed=",EDU0157.get_value("speed"),EDU0157.get_unit("speed"))
-  print("DIR=",EDU0157.get_value("dir"))
+  print("Speed=",EDU0157.get_value("Speed"),EDU0157.get_unit("Speed"))
+  print("DIR=",EDU0157.get_value("Dir"))
   print("Temp=",EDU0157.get_value("Temp"),EDU0157.get_unit("Temp"))
   print("Humi=",EDU0157.get_value("Humi"),EDU0157.get_unit("Humi"))
   print("Temp=",EDU0157.get_value("Pressure"),EDU0157.get_unit("Pressure"))

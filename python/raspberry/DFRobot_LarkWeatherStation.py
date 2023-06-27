@@ -24,14 +24,11 @@ class DFRobot_LarkWeatherStation:
   CMD_GET_UNIT             =   0x04 #获取传感器单位
   CMD_GET_VERSION          =   0x05 #获取版本号
   CMD_RESET_DATA           =   0x06
-  CMD_RADIUS_DATA          =    0x07#设置风杯半径
-  CMD_SPEED1_DATA          =   0x08#设置标准风速1
-  CMD_SPEED2_DATA          =   0x09#设置标准风速2
-  CMD_CALIBRATOR           =   0x0a#开始校准计算
+
 
   IIC_MAX_TRANSFER         =   32    #Maximum transferred data via I2C
   I2C_ACHE_MAX_LEN         =   32
-  CMD_END         =    CMD_CALIBRATOR
+  CMD_END         =    CMD_RESET_DATA
 
 
   ERR_CODE_NONE           =    0x00 #Normal communication 
@@ -131,25 +128,6 @@ class DFRobot_LarkWeatherStation:
           rslt += chr(data)
     return rslt
   
-  def set_radius(self,radius):
-    '''!
-      @brief 设置风杯半径
-      @param radius 半径
-    '''
-    length = 2
-    data = radius * 100
-    pkt = [0] * (3 + length)
-    pkt[self.INDEX_CMD]        = self.CMD_RADIUS_DATA
-    pkt[self.INDEX_ARGS_NUM_L] = length & 0xFF
-    pkt[self.INDEX_ARGS_NUM_H] = (length >> 8) & 0xFF
-    pkt[self.INDEX_ARGS + 0]       = data >> 8
-    pkt[self.INDEX_ARGS + 1]       = data & 0xff
-    self._send_packet(pkt)
-    time.sleep(2)
-    recv_pkt = self._recv_packet(self.CMD_RADIUS_DATA)
-    if (len(recv_pkt) >= 5) and (recv_pkt[self.INDEX_RES_ERR] == self.ERR_CODE_NONE and recv_pkt[self.INDEX_RES_STATUS] == self.STATUS_SUCCESS):
-      length = recv_pkt[self.INDEX_RES_LEN_L] | (recv_pkt[self.INDEX_RES_LEN_H] << 8)
-      return 1
     
   def get_information(self, state):
     '''!
@@ -330,7 +308,7 @@ class DFRobot_LarkWeatherStation_UART(DFRobot_LarkWeatherStation):
       @n RP2040_SCI_ADDR_0X22      0x22
       @n RP2040_SCI_ADDR_0X23      0x23
     '''
-    self.ser = serial.Serial("/dev/ttyAMA0",115200)
+    self.ser = serial.Serial("/dev/ttyS0",115200)
     if self.ser.isOpen == False:
       self.ser.open()
     DFRobot_LarkWeatherStation.__init__(self)
