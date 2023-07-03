@@ -17,12 +17,12 @@ class DFRobot_LarkWeatherStation:
 
   DEBUG_TIMEOUT_MS  =  2
 
-  CMD_GET_DATA            =    0x00 #根据传过来的名称返回名字
-  CMD_GET_ALL_DATA         =   0x01 #获取板载全部传感器数据
-  CMD_SET_TIME             =   0x02 #设置板载RTC时间
+  CMD_GET_DATA            =    0x00 #Return the name based on the given name
+  CMD_GET_ALL_DATA         =   0x01 #Get all onboard sensor data
+  CMD_SET_TIME             =   0x02 #Set onboard RTC time
   CME_GET_TIME             =   0x03
-  CMD_GET_UNIT             =   0x04 #获取传感器单位
-  CMD_GET_VERSION          =   0x05 #获取版本号
+  CMD_GET_UNIT             =   0x04 #Get sensor units
+  CMD_GET_VERSION          =   0x05 #Get version number
   CMD_RESET_DATA           =   0x06
 
 
@@ -70,17 +70,17 @@ class DFRobot_LarkWeatherStation:
   
   def begin(self):
     '''!
-      @brief 初始化SCI采集模块，主要用于初始化通信接口
-      @return int 初始化状态
-      @n       0      初始化成功
-      @n      others  初始化失败
+      @brief Initialize the SCI acquisition module, mainly used for initializing the communication interface
+      @return int Initialization status
+      @n       0      Initialization successful
+      @n      others  Initialization failed
     '''
     return 0
   def get_value(self, keys):
     '''!
-      @brief 获取传感器数据
-      @param keys  需要获取的数据
-      @return 返回获取的数据
+      @brief Get sensor data
+      @param keys  Data to be obtained
+      @return Returns the acquired data
     '''
     rslt = ""
     length = len(keys)
@@ -104,9 +104,9 @@ class DFRobot_LarkWeatherStation:
 
   def get_unit(self, keys):
     '''!
-      @brief 获取数据单位
-      @param keys  需要获取的数据
-      @return 返回获取后的单位
+      @brief Get data units
+      @param keys  Data for which units need to be obtained
+      @return Returns the obtained units
     '''
     rslt = ""
     length = len(keys)
@@ -131,9 +131,9 @@ class DFRobot_LarkWeatherStation:
     
   def get_information(self, state):
     '''!
-      @brief 获取全部数据
-      @param state true:加入时间戳 false:不加时间戳
-      @return String 返回获取的全部数据
+      @brief Get all data
+      @param state true: include timestamp, false: do not include timestamp
+      @return String Returns all the acquired data
     '''
     rslt = ""
     length = 1
@@ -157,13 +157,13 @@ class DFRobot_LarkWeatherStation:
 
   def set_time(self, year, month, day,hour, minute, second):
     '''!
-      @brief 设置RTC时间
-      @param year 年
-      @param month 月
-      @param day 日
-      @param hour 时
-      @param minute 分
-      @param second 秒
+      @brief Set the RTC time
+      @param year Year
+      @param month Month
+      @param day Day
+      @param hour Hour
+      @param minute Minute
+      @param second Second
     '''
     length = 7
     pkt = [0] * (3 + length)
@@ -185,7 +185,7 @@ class DFRobot_LarkWeatherStation:
 
   def get_time_stamp(self):
     '''!
-      @brief 获取RTC时间
+      @brief Get the RTC time
     '''
     rslt = ""
     length = 0

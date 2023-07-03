@@ -1,5 +1,5 @@
 '''!
-  @file getData.ino
+  @file get_data.py
   @brief This is a routine to get skylark data
   @copyright    Copyright (c) 2010 DFRobot Co.Ltd (http://www.dfrobot.com)
   @license      The MIT License (MIT)
@@ -16,12 +16,11 @@ import time
 
 from DFRobot_LarkWeatherStation import *
 
-ctype=0
-
 ADDRESS = 0x42 
 
-
+# I2C mode
 EDU0157 = DFRobot_LarkWeatherStation_I2C(ADDRESS)
+#uart mode
 #EDU0157 = DFRobot_LarkWeatherStation_UART()
 def setup():
   while EDU0157.begin() != 0:

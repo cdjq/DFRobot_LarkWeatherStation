@@ -1,3 +1,13 @@
+/*!
+ * @file  DFRobot_LarkWeatherStation.h
+ * @brief DFRobot_LarkWeatherStation Class infrastructure
+ * @copyright	Copyright (c) 2021 DFRobot Co.Ltd (http://www.dfrobot.com)
+ * @license   The MIT License (MIT)
+ * @author    [TangJie](jie.tang@dfrobot.com)
+ * @version   V1.0
+ * @date      2023-07-03
+ * @url       https://github.com/DFRobot/DFRobot_LarkWeatherStation
+ */
 #ifndef _DFROBOT_LARKWEATHERSTATION_H_
 #define _DFROBOT_LARKWEATHERSTATION_H_
 
@@ -12,7 +22,7 @@
 #include "HardwareSerial.h"
 #endif
 
-//#define ENABLE_DBG ///< 打开这个宏, 可以看到程序的详细运行过程
+//#define ENABLE_DBG ///< Enable this macro to see the detailed execution process of the program
 #ifdef ENABLE_DBG
 #define DBG(...) {Serial.print("[");Serial.print(__FUNCTION__); Serial.print("(): "); Serial.print(__LINE__); Serial.print(" ] "); Serial.println(__VA_ARGS__);}
 #else
@@ -57,57 +67,56 @@ public:
    */
   int begin(uint32_t freq = 100000);
   /**
-   * @brief 获取传感器数据
-   * 
-   * @param keys 需要获取的数据
-   * @return String 返回获取的数据
+   * @brief Get sensor data
+   *
+   * @param keys Data to be obtained
+   * @return String Returns the acquired data
    */
   String getValue(char *keys);
   /**
-   * @brief 获取数据单位
-   * 
-   * @param keys 需要获取的数据
-   * @return String 返回获取后的单位
+   * @brief Get data unit
+   *
+   * @param keys Data for which units need to be obtained
+   * @return String Returns the obtained units
    */
   String getUnit(char *keys);
-  /**
-   * @brief 获取全部数据
-   * 
-   * @param state true:加入时间戳 false:不加时间戳
-   * @return String 返回获取的全部数据
-   */
+ /**
+  * @brief Get all data
+  *
+  * @param state true: include timestamp, false: do not include timestamp
+  * @return String Returns all the acquired data
+  */
   String getInformation(bool state);
   /**
-   * @brief 设置RTC时间
-   * 
-   * @param year 年
-   * @param month 月
-   * @param day 日
-   * @param hour 时
-   * @param minute 分
-   * @param second 秒
-   * @return 返回设置状态
+   * @brief Set RTC time
+   *
+   * @param year Year
+   * @param month Month
+   * @param day Day
+   * @param hour Hour
+   * @param minute Minute
+   * @param second Second
+   * @return Returns the set status
    */
   uint8_t setTime(uint16_t year,uint8_t month,uint8_t day,uint8_t hour,uint8_t minute,uint8_t second);
-  /**
-   * @brief 获取RTC时间
-   * 
-   * @return 返回获取的RTC时间
-   */
+ /**
+  * @brief Get RTC time
+  *
+  * @return Returns the acquired RTC time
+  */
   String getTimeStamp(void);
 
 protected:
-  // uint32_t getRefreshRate_ms(uint8_t rate);
-  // /**
-  //  * @fn recvPacket
-  //  * @brief Receive and parse the response data packet
-  //  * 
-  //  * @param cmd       Command to receive packet
-  //  * @param errorCode Receive error code
-  //  * @return Pointer array
-  //  * @n      NULL    indicates receiving packet failed
-  //  * @n      Non-NULL  response packet pointer
-  //  */
+  /**
+   * @fn recvPacket
+   * @brief Receive and parse the response data packet
+   * 
+   * @param cmd       Command to receive packet
+   * @param errorCode Receive error code
+   * @return Pointer array
+   * @n      NULL    indicates receiving packet failed
+   * @n      Non-NULL  response packet pointer
+   */
   void *recvPacket(uint8_t cmd, uint8_t *errorCode);
   /**
    * @fn init
@@ -159,7 +168,12 @@ class DFRobot_LarkWeatherStation_I2C:public DFRobot_LarkWeatherStation {
 
 
 public:
-
+/**
+ * @brief Example Initialize an i2c object
+ * 
+ * @param addr device address
+ * @param pWire I2C object
+ */
 DFRobot_LarkWeatherStation_I2C(uint8_t addr = 0x42, TwoWire *pWire = &Wire);
 ~DFRobot_LarkWeatherStation_I2C();
   protected:
@@ -212,15 +226,19 @@ private:
 class DFRobot_LarkWeatherStation_UART:public DFRobot_LarkWeatherStation {
 
 public:
-
+/**
+ * @brief Initializes a UART object
+ * 
+ * @param s Serial port parameter object
+ */
 DFRobot_LarkWeatherStation_UART(Stream *s);
 ~DFRobot_LarkWeatherStation_UART();
 protected:
    /**
    * @fn init
-   * @brief Initalize I2C interface
+   * @brief Initalize uatr interface
    * 
-   * @param freq Set I2C communication frequency
+   * @param freq Insubstantiality
    * @return int Init status
    * @n       0  Init successful
    * @n      -1  The communication interface class & object are not passed in
@@ -258,7 +276,7 @@ protected:
    */
   void sendFlush();
 private:
-  uint8_t state = 0;
+  uint8_t _state = 0;
   Stream *_s;
 };
 

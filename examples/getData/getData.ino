@@ -1,6 +1,6 @@
 /*!
  * @file getData.ino
- * @brief 这是一个获取云雀数据的例程
+ * @brief This is a routine to get skylark data
  * ---------------------------------------------------------------------------------------------------------------
  *    board   |             MCU                | Leonardo/Mega2560/M0 |    UNO    | ESP8266 | ESP32 |  microbit  |
  *     VCC    |            3.3V/5V             |        VCC           |    VCC    |   VCC   |  VCC  |     X      |
@@ -14,7 +14,7 @@
  * @author       [TangJie](jie.tang@dfrobot.com)
  * @version      V1.0.0
  * @date         2023-06-8
- * @url         https://github.com/DFRobot/DFRobot_Atmospherlum
+ * @url         https://github.com/DFRobot/DFRobot_LarkWeatherStation
  */
 #include "DFRobot_LarkWeatherStation.h"
 #if defined(ARDUINO_AVR_UNO)||defined(ESP8266)

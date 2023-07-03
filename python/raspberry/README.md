@@ -1,82 +1,85 @@
 # DFRobot_Atmospherlum
 * [English Version](./README.md)
 
-这是一个云雀的驱动库，可以用它来获取云雀传感器中的数据。
+This is a Skylark driver library that can be used to get data from the Skylark sensor.
 
 
-![产品效果图片](./resources/images/EDU0157.png)
+![Product Image](./resources/images/EDU0157.png)
 
 
-## 产品链接（https://www.dfrobot.com.cn）
+## Product Link (https://www.dfrobot.com)
 
     SKU：EDU0157
 
-## 目录
+## Table of Contents
 
-  * [概述](#概述)
-  * [库安装](#库安装)
-  * [方法](#方法)
-  * [兼容性](#兼容性)
-  * [历史](#历史)
-  * [创作者](#创作者)
+  * [summary](#summary)
+  * [installation](#installation)
+  * [methods](#methods)
+  * [compatibility](#compatibility)
+  * [history](#history)
+  * [credits](#credits)
 
-## 概述
+## Summary
 
-  * 获取云雀的采集的数据
+  * Obtain data collected by larks
 
-## 库安装
+## Installation
 
-使用此库前，请首先下载库文件，将其粘贴到\Arduino\libraries目录中，然后打开examples文件夹并在该文件夹中运行演示。
+Before using the library, first download the library file, paste it into the \Arduino\libraries directory, then open the examples folder and run the demo in that folder.
 
-## 方法
+## Methods
 
 ```python
 def begin(self):
     '''!
-      @brief 初始化SCI采集模块，主要用于初始化通信接口
-      @return int 初始化状态
-      @n       0      初始化成功
-      @n      others  初始化失败
+      @brief Initialize the SCI acquisition module, mainly used for initializing the communication interface
+      @return int Initialization status
+      @n       0      Initialization successful
+      @n      others  Initialization failed
     '''
+
   def get_value(self, keys):
     '''!
-      @brief 获取传感器数据
-      @param keys  需要获取的数据
-      @return 返回获取的数据
+      @brief Get sensor data
+      @param keys  Data to be obtained
+      @return Returns the acquired data
     '''
 
   def get_unit(self, keys):
     '''!
-      @brief 获取数据单位
-      @param keys  需要获取的数据
-      @return 返回获取后的单位
+      @brief Get data units
+      @param keys  Data for which units need to be obtained
+      @return Returns the obtained units
     '''
 
   def get_information(self, state):
     '''!
-      @brief 获取全部数据
-      @param state true:加入时间戳 false:不加时间戳
-      @return String 返回获取的全部数据
+      @brief Get all data
+      @param state true: include timestamp, false: do not include timestamp
+      @return String Returns all the acquired data
     '''
 
   def set_time(self, year, month, day,hour, minute, second):
     '''!
-      @brief 设置RTC时间
-      @param year 年
-      @param month 月
-      @param day 日
-      @param hour 时
-      @param minute 分
-      @param second 秒
+      @brief Set the RTC time
+      @param year Year
+      @param month Month
+      @param day Day
+      @param hour Hour
+      @param minute Minute
+      @param second Second
     '''
+
   def get_time_stamp(self):
     '''!
-      @brief 获取RTC时间
+      @brief Get the RTC time
     '''
+
   
 ```
 
-## 兼容性
+## Compatibility
 
 * RaspberryPi Version
 
@@ -93,11 +96,11 @@ def begin(self):
 | Python2 |     √     |            |          |         |
 | Python3 |     √     |            |          |         |
 
-## 历史
+## History
 
-- 2023-06-8 - 1.0.0 版本
+- 2023-06-8 - Version 1.0.0 released.
 
-## 创作者
+## Credits
 
 Written by TangJie(jie.tang@dfrobot.com), 2021. (Welcome to our [website](https://www.dfrobot.com/))
 

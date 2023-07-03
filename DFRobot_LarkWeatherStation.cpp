@@ -1,13 +1,24 @@
+/*!
+ * @file  DFRobot_LarkWeatherStation.cpp
+ * @brief DFRobot_LarkWeatherStation Class infrastructure, implementation of basic methods
+ *
+ * @copyright	Copyright (c) 2021 DFRobot Co.Ltd (http://www.dfrobot.com)
+ * @license   The MIT License (MIT)
+ * @author    [TangJie](jie.tang@dfrobot.com)
+ * @version   V1.0
+ * @date      2021-08-31
+ * @url       https://github.com/DFRobot/DFRobot_LarkWeatherStation
+ */
 #include "DFRobot_LarkWeatherStation.h"
 
 #define DEBUG_TIMEOUT_MS    2500
 
-#define CMD_GET_DATA                0x00 //根据传过来的名称返回名字
-#define CMD_GET_ALL_DATA            0x01 //获取板载全部传感器数据
-#define CMD_SET_TIME                0x02 //设置板载RTC时间
+#define CMD_GET_DATA                0x00 ///< Return the name based on the given name
+#define CMD_GET_ALL_DATA            0x01 ///< Get all onboard sensor data
+#define CMD_SET_TIME                0x02 ///< Set onboard RTC time
 #define CME_GET_TIME                0x03
-#define CMD_GET_UNIT                0x04 //获取传感器单位
-#define CMD_GET_VERSION             0x05 //获取版本号
+#define CMD_GET_UNIT                0x04 ///< Get sensor units
+#define CMD_GET_VERSION             0x05 ///< Get version number
 #define IIC_MAX_TRANSFER            32     ///< Maximum transferred data via I2C
 #define I2C_ACHE_MAX_LEN            32
 #define CMD_END             CMD_GET_VERSION
@@ -164,7 +175,6 @@ void * DFRobot_LarkWeatherStation::recvPacket(uint8_t cmd, uint8_t *errorCode){
       {
         recvData(&recvPkt.cmd, 1);
         if(recvPkt.cmd != cmd){
-          //reset(cmd);
           recvFlush();
           if(errorCode) *errorCode = ERR_CODE_RES_PKT; //Response packet error
           DBG("Response pkt is error!");
@@ -174,7 +184,6 @@ void * DFRobot_LarkWeatherStation::recvPacket(uint8_t cmd, uint8_t *errorCode){
         length = (recvPkt.lenH << 8) | recvPkt.lenL;
         recvPktPtr = (pCmdRecvPkt_t)malloc(sizeof(sCmdRecvPkt_t) + length);
         if(recvPktPtr == NULL){
-          //reset(cmd);
           if(errorCode) *errorCode = ERR_CODE_M_NO_SPACE; //Insufficient memory of I2C controller(master)
           return NULL;
         }
@@ -182,7 +191,6 @@ void * DFRobot_LarkWeatherStation::recvPacket(uint8_t cmd, uint8_t *errorCode){
       
         if(length)recvData(recvPktPtr->buf, length);
         if(errorCode) *errorCode = ERR_CODE_NONE;
-        //DBG(millis() - t);
         return recvPktPtr;
       }
     }
@@ -312,14 +320,13 @@ int DFRobot_LarkWeatherStation_I2C::recvData(void *data, int len){
     len = remain > I2C_ACHE_MAX_LEN ? I2C_ACHE_MAX_LEN : remain;
     remain -= len;
 #if defined(ESP32)
-    if(remain) _pWire->requestFrom(_addr, len, true);
+    if(remain) _pWire->requestFrom(_addr, len, 1);
 #else
-    if(remain) _pWire->requestFrom(_addr, len, false);
+    if(remain) _pWire->requestFrom(_addr, len, 0);
 #endif
-    else _pWire->requestFrom(_addr, len, true);
+    else _pWire->requestFrom(_addr, len, 1);
     for(int i = 0; i < len; i++){
       pBuf[i] = _pWire->read();
-      //DBG(pBuf[i],HEX);
       yield();
     }
     pBuf += len;
@@ -347,7 +354,6 @@ DFRobot_LarkWeatherStation_UART::DFRobot_LarkWeatherStation_UART(Stream *s)
 DFRobot_LarkWeatherStation_UART::~DFRobot_LarkWeatherStation_UART(){}
 
 int DFRobot_LarkWeatherStation_UART::init(uint32_t freq){
-  //_s->begin(115200);
   return 0;
 }
 
@@ -364,29 +370,6 @@ void DFRobot_LarkWeatherStation_UART::sendPacket(void *pkt, int length, bool sto
 
 int DFRobot_LarkWeatherStation_UART::recvData(void *data, int len)
 {
-  // uint8_t *pBuf = (uint8_t *)data;
-  // int remain = len;
-  // int total = 0;
-  // uint32_t firstTime = 0;
-  // while(1){
-  //     if(_s->available()!= 0){
-  //       firstTime = millis();
-  //       pBuf[total] = _s->read();
-  //       total++;
-  //       if(remain == total){
-  //         // for(int i = 0; i < len; i++){
-  //         //   Serial.print(pBuf[i]);
-  //         // }
-  //         return total;
-  //       }
-  //     }
-  //   if((millis() - firstTime) > 30000){
-  //     DBG("serial time out");
-  //     return total;
-  //   }
-  //   delay(1);
-  // }
-
   uint8_t *pBuf = (uint8_t *)data;
   int remain = len;
   int total = 0;
