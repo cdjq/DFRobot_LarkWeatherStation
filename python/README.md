@@ -1,4 +1,4 @@
-# DFRobot_Atmospherlum
+# DFRobot_LarkWeatherStation
 * [English Version](./README.md)
 
 This is a Skylark driver library that can be used to get data from the Skylark sensor.
@@ -76,7 +76,44 @@ def begin(self):
       @brief Get the RTC time
     '''
 
-  
+  def config_DTU(self, dtuswitch, method):
+    '''!
+      @brief Configure DTU enablement.
+      @param dtuswitch DTU switch
+      @param method Operation mode
+    '''
+  def config_WIFI(self,ssid,pwd):
+    '''!
+      @brief Configure WiFi information.
+      @param SSID WiFi name
+      @param PWD WiFi password
+    '''
+  def config_Lora(self,deui,eui,key):
+    '''!
+      @brief Configure LoRa.
+      @param DEUI Gateway
+      @param EUI Node
+      @param KEY Key
+    '''
+  def config_MQTT1(self,Server,Server_IP,Save):
+    '''!
+      @brief MQTT configuration 1.
+      @param Server MQTT platform
+      @param Server_IP MQTT platform IP
+      @param Save Whether to save transmitted data
+    '''
+  def config_MQTT2(self,Iot_ID,Iot_PWD):
+    '''!
+      @brief MQTT configuration 2.
+      @param Iot_ID Login username
+      @param Iot_PWD Login password
+    '''
+  def config_Topic(self,name,chan):
+    '''!
+      @brief Topic subscription.
+      @param name Topic name
+      @param chan Key
+    '''
 ```
 
 ## Compatibility

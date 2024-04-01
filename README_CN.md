@@ -80,6 +80,84 @@
    * @return 返回获取的RTC时间
    */
   String getTimeStamp(void);
+  /**
+   * @fn setRadius
+   * @brief 设置风杯半径
+   * 
+   * @param radius 风杯半径
+   * @return int 返回设置状态
+   */
+  int setRadius(float radius);
+  /**
+   * @fn setSpeed1
+   * @brief 设置标准风速1
+   * 
+   * @param 标准风速1数据
+   */
+  void setSpeed1(float speed);
+  /**
+   * @fn setSpeed2
+   * @brief 设置标准风速2
+   * 
+   * @param 标准风速2数据
+   */
+  void setSpeed2(float speed);
+  /**
+   * @fn calibrationSpeed
+   * @brief 开始计算数据
+   * @return 状态数据
+   */
+  String calibrationSpeed(void);
+  /**
+   * @fn configDTU
+   * 
+   * @brief 配置DTU是否使能
+   * @param dtuswitch DTU开关
+   * @param method 工作模式
+  */
+  uint8_t configDTU(char* dtuswitch, char* method);
+  /**
+   * @fn configWIFI 
+   * 
+   * @brief wifi 信息配置
+   * @param SSID wifi 名称
+   * @param PWD wifi 密码
+  */
+  uint8_t configWIFI(char* SSID, char* PWD);
+  /**
+   * @fn configLora
+   * 
+   * @brief Lora 配置
+   * @param DEUI 网关
+   * @param EUI 节点
+   * @param KEY 密钥
+  */
+  uint8_t configLora(char* DEUI, char* EUI,char* KEY);
+  /**
+   * @fn configMQTT1
+   * 
+   * @brief MQTT配置1
+   * @param Server mqtt平台
+   * @param Server_IP mqtt平台IP
+   * @param Save  传输数据是否保存
+  */
+  uint8_t configMQTT1(char* Server, char* Server_IP,char* Save);
+  /**
+   * @fn configMQTT2
+   * 
+   * @brief configMQTT2 MQTT配置2
+   * @param Iot_ID 登录用户名称
+   * @param Iot_PWD 登录用户密码
+  */
+  uint8_t configMQTT2(char* Iot_ID,char* Iot_PWD);
+  /**
+   * @fn configTopic
+   * 
+   * @brief 主题订阅
+   * @param name 主题名称
+   * @param chan 密钥
+  */
+  uint8_t configTopic(char* name,char* chan);
 ```
 
 ## 兼容性
@@ -92,7 +170,6 @@ Arduino Leonardo   |      √       |              |             |
 FireBeetle-ESP8266 |      √       |              |             |
 FireBeetle-ESP32   |      √       |              |             |
 FireBeetle-M0      |      √       |              |             |
-Micro:bit          |      √       |              |             |
 
 
 ## 历史

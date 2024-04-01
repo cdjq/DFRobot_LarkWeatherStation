@@ -1,5 +1,6 @@
+# -*- coding: utf-8 -*-
 '''!
-  @file get_data.py
+  @file getData.ino
   @brief This is a routine to get skylark data
   @copyright    Copyright (c) 2010 DFRobot Co.Ltd (http://www.dfrobot.com)
   @license      The MIT License (MIT)
@@ -14,14 +15,15 @@ import os
 sys.path.append("../")
 import time
 
-from DFRobot_LarkWeatherStation import *
+from DFRobot_Atmospherlum import *
+
+ctype=0
 
 ADDRESS = 0x42 
 
-# I2C mode
-EDU0157 = DFRobot_LarkWeatherStation_I2C(ADDRESS)
-#uart mode
-#EDU0157 = DFRobot_LarkWeatherStation_UART()
+
+EDU0157 = DFRobot_Atmospherlum_I2C(ADDRESS)
+#EDU0157 = DFRobot_Atmospherlum_UART()
 def setup():
   while EDU0157.begin() != 0:
     print("Sensor initialize failed!!")
@@ -33,8 +35,8 @@ def setup():
   
 def loop():
   print("------------------")
-  print("Speed=",EDU0157.get_value("Speed"),EDU0157.get_unit("Speed"))
-  print("DIR=",EDU0157.get_value("Dir"))
+  print("Speed=",EDU0157.get_value("speed"),EDU0157.get_unit("speed"))
+  print("DIR=",EDU0157.get_value("dir"))
   print("Temp=",EDU0157.get_value("Temp"),EDU0157.get_unit("Temp"))
   print("Humi=",EDU0157.get_value("Humi"),EDU0157.get_unit("Humi"))
   print("Temp=",EDU0157.get_value("Pressure"),EDU0157.get_unit("Pressure"))

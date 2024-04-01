@@ -1,4 +1,4 @@
-# DFRobot_Atmospherlum
+# DFRobot_LarkWeatherStation
 * [English Version](./README.md)
 
 这是一个云雀的驱动库，可以用它来获取云雀传感器中的数据。
@@ -73,6 +73,45 @@ def begin(self):
     '''!
       @brief 获取RTC时间
     '''
+  def config_DTU(self, dtuswitch, method):
+    '''!
+      @brief 配置DTU启用
+      @param dtuswitch DTU开关
+      @param method 操作模式
+    '''
+  def config_WIFI(self,ssid,pwd):
+    '''!
+      @brief 配置WiFi信息
+      @param SSID WiFi名称
+      @param PWD WiFi密码
+    '''
+  def config_Lora(self,deui,eui,key):
+    '''!
+      @brief 配置LoRa
+      @param DEUI 网关
+      @param EUI 节点
+      @param KEY 密钥
+    '''
+  def config_MQTT1(self,Server,Server_IP,Save):
+    '''!
+      @brief MQTT配置1
+      @param Server MQTT平台
+      @param Server_IP MQTT平台IP
+      @param Save 是否保存传输的数据
+    '''
+  def config_MQTT2(self,Iot_ID,Iot_PWD):
+    '''!
+      @brief MQTT配置2
+      @param Iot_ID 登录用户名
+      @param Iot_PWD 登录密码
+    '''
+  def config_Topic(self,name,chan):
+    '''!
+      @brief 主题订阅
+      @param name 主题名称
+      @param chan 关键字
+    '''
+
   
 ```
 

@@ -22,7 +22,7 @@
 #include "HardwareSerial.h"
 #endif
 
-//#define ENABLE_DBG ///< Enable this macro to see the detailed execution process of the program
+//#define ENABLE_DBG ///< 打开这个宏, 可以看到程序的详细运行过程
 #ifdef ENABLE_DBG
 #define DBG(...) {Serial.print("[");Serial.print(__FUNCTION__); Serial.print("(): "); Serial.print(__LINE__); Serial.print(" ] "); Serial.println(__VA_ARGS__);}
 #else
@@ -44,13 +44,13 @@ class DFRobot_LarkWeatherStation{
 public:
 
   /**
-   * @fn DFRobot_LarkWeatherStation
+   * @fn DFRobot_RP2040_SCI
    * @brief DFRobot_RP2040_SCI Class Constructor.
    */
   DFRobot_LarkWeatherStation();
 
   /**
-   * @fn  ~DFRobot_LarkWeatherStation
+   * @fn  ~DFRobot_RP2040_SCI
    * @brief DFRobot_RP2040_SCI Class Destructor. 
    */
   ~DFRobot_LarkWeatherStation();
@@ -67,6 +67,7 @@ public:
    */
   int begin(uint32_t freq = 100000);
   /**
+   * @fn getValue
    * @brief Get sensor data
    *
    * @param keys Data to be obtained
@@ -74,20 +75,23 @@ public:
    */
   String getValue(char *keys);
   /**
+   * @fn getUnit
    * @brief Get data unit
    *
    * @param keys Data for which units need to be obtained
    * @return String Returns the obtained units
    */
   String getUnit(char *keys);
- /**
-  * @brief Get all data
-  *
-  * @param state true: include timestamp, false: do not include timestamp
-  * @return String Returns all the acquired data
-  */
+  /**
+   * @fn getInformation
+   * @brief Get all data
+   *
+   * @param state true: include timestamp, false: do not include timestamp
+   * @return String Returns all the acquired data
+   */
   String getInformation(bool state);
   /**
+   * @fn setTime
    * @brief Set RTC time
    *
    * @param year Year
@@ -100,23 +104,106 @@ public:
    */
   uint8_t setTime(uint16_t year,uint8_t month,uint8_t day,uint8_t hour,uint8_t minute,uint8_t second);
  /**
+  * @fn getTimeStamp
   * @brief Get RTC time
   *
   * @return Returns the acquired RTC time
   */
   String getTimeStamp(void);
+  /**
+   * @fn setRadius
+   * @brief Set the radius of the anemometer cup.
+   * 
+   * @param radius Radius of the anemometer cup
+   * @return int Status of the setting
+   */
+  int setRadius(float radius);
+  /**
+   * @fn setSpeed1
+   * @brief Set standard wind speed 1.
+   * 
+   * @param speed Data for standard wind speed 1
+   */
+  void setSpeed1(float speed);
+  /**
+   * @fn setSpeed2
+   * @brief Set standard wind speed 2.
+   * 
+   * @param speed Data for standard wind speed 2
+   */
+  void setSpeed2(float speed);
+  /**
+   * @fn calibrationSpeed
+   * @brief Start calculating data.
+   * @return Status data
+   */
+  String calibrationSpeed(void);
+  /**
+   * @fn configDTU
+   * 
+   * @brief Configure DTU enablement.
+   * @param dtuswitch DTU switch
+   * @param method Operation mode
+   */
+  uint8_t configDTU(char* dtuswitch, char* method);
+  /**
+   * @fn configWIFI 
+   * 
+   * @brief Configure WiFi information.
+   * @param SSID WiFi name
+   * @param PWD WiFi password
+   */
+  uint8_t configWIFI(char* SSID, char* PWD);
+  /**
+   * @fn configLora
+   * 
+   * @brief Configure LoRa.
+   * @param DEUI Gateway
+   * @param EUI Node
+   * @param KEY Key
+   */
+  uint8_t configLora(char* DEUI, char* EUI, char* KEY);
+  /**
+   * @fn configMQTT1
+   * 
+   * @brief MQTT configuration 1.
+   * @param Server MQTT platform
+   * @param Server_IP MQTT platform IP
+   * @param Save Whether to save transmitted data
+   */
+  uint8_t configMQTT1(char* Server, char* Server_IP, char* Save);
+  /**
+   * @fn configMQTT2
+   * 
+   * @brief MQTT configuration 2.
+   * @param Iot_ID Login username
+   * @param Iot_PWD Login password
+   */
+  uint8_t configMQTT2(char* Iot_ID, char* Iot_PWD);
+  /**
+   * @fn configTopic
+   * 
+   * @brief Topic subscription.
+   * @param name Topic name
+   * @param chan Key
+   */
+  uint8_t configTopic(char* name, char* chan);
+
+
+  void projectMode(void);
 
 protected:
-  /**
-   * @fn recvPacket
-   * @brief Receive and parse the response data packet
-   * 
-   * @param cmd       Command to receive packet
-   * @param errorCode Receive error code
-   * @return Pointer array
-   * @n      NULL    indicates receiving packet failed
-   * @n      Non-NULL  response packet pointer
-   */
+  // uint32_t getRefreshRate_ms(uint8_t rate);
+  // /**
+  //  * @fn recvPacket
+  //  * @brief Receive and parse the response data packet
+  //  * 
+  //  * @param cmd       Command to receive packet
+  //  * @param errorCode Receive error code
+  //  * @return Pointer array
+  //  * @n      NULL    indicates receiving packet failed
+  //  * @n      Non-NULL  response packet pointer
+  //  */
   void *recvPacket(uint8_t cmd, uint8_t *errorCode);
   /**
    * @fn init
@@ -160,6 +247,10 @@ protected:
    */
   virtual void sendFlush() = 0;
 
+  
+
+  void restData(void);
+
 private:
   uint32_t _timeout; ///< Time of receive timeout
 };
@@ -168,12 +259,7 @@ class DFRobot_LarkWeatherStation_I2C:public DFRobot_LarkWeatherStation {
 
 
 public:
-/**
- * @brief Example Initialize an i2c object
- * 
- * @param addr device address
- * @param pWire I2C object
- */
+
 DFRobot_LarkWeatherStation_I2C(uint8_t addr = 0x42, TwoWire *pWire = &Wire);
 ~DFRobot_LarkWeatherStation_I2C();
   protected:
@@ -226,19 +312,15 @@ private:
 class DFRobot_LarkWeatherStation_UART:public DFRobot_LarkWeatherStation {
 
 public:
-/**
- * @brief Initializes a UART object
- * 
- * @param s Serial port parameter object
- */
+
 DFRobot_LarkWeatherStation_UART(Stream *s);
 ~DFRobot_LarkWeatherStation_UART();
 protected:
    /**
    * @fn init
-   * @brief Initalize uatr interface
+   * @brief Initalize I2C interface
    * 
-   * @param freq Insubstantiality
+   * @param freq Set I2C communication frequency
    * @return int Init status
    * @n       0  Init successful
    * @n      -1  The communication interface class & object are not passed in
@@ -276,7 +358,7 @@ protected:
    */
   void sendFlush();
 private:
-  uint8_t _state = 0;
+  uint8_t state = 0;
   Stream *_s;
 };
 

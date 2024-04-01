@@ -1,4 +1,14 @@
 # -*- coding: utf-8 -*-
+'''!
+  @file       DFRobot_LarkWeatherStation.py
+  @brief       DFRobot_LarkWeatherStation Class infrastructure
+  @copyright   Copyright (c) 2021 DFRobot Co.Ltd (http://www.dfrobot.com)
+  @license     The MIT License (MIT)
+  @author      TangJie(jie.tang@dfrobot.com)
+  @version     V1.0
+  @date        2023-07-03
+  @url         https://github.com/DFRobor/DFRobot_LarkWeatherStation
+'''
 import serial
 import time
 import smbus
@@ -8,14 +18,15 @@ import RPi.GPIO as GPIO
 import math
 import serial
 
+
 I2C_MODE                  = 0x01
 UART_MODE                 = 0x02
 DEV_ADDRESS               = 0x42
 
 
-class DFRobot_LarkWeatherStation:
+class DFRobot_Atmospherlum:
 
-  DEBUG_TIMEOUT_MS  =  2
+  DEBUG_TIMEOUT_MS  =  4
 
   CMD_GET_DATA            =    0x00 #Return the name based on the given name
   CMD_GET_ALL_DATA         =   0x01 #Get all onboard sensor data
@@ -24,11 +35,21 @@ class DFRobot_LarkWeatherStation:
   CMD_GET_UNIT             =   0x04 #Get sensor units
   CMD_GET_VERSION          =   0x05 #Get version number
   CMD_RESET_DATA           =   0x06
+  CMD_RADIUS_DATA     =   0x07  # Set the radius of the anemometer cup
+  CMD_SPEED1_DATA     =   0x08  # Set standard wind speed 1
+  CMD_SPEED2_DATA     =   0x09  # Set standard wind speed 2
+  CMD_CALIBRATOR      =   0x0a  # Start calibration calculation
 
+  CMD_DTU             =   0x0c  # DTU configuration
+  CMD_WIFI            =   0x0d  # WiFi configuration
+  CMD_LORA            =   0x0e  # LoRa configuration
+  CMD_MQTT1           =   0x10  # MQTT configuration 1
+  CMD_MQTT2           =   0x11  # MQTT configuration 2
+  CMD_TOP             =   0x12  # Topic configuration
 
   IIC_MAX_TRANSFER         =   32    #Maximum transferred data via I2C
   I2C_ACHE_MAX_LEN         =   32
-  CMD_END         =    CMD_RESET_DATA
+  CMD_END         =    CMD_TOP
 
 
   ERR_CODE_NONE           =    0x00 #Normal communication 
@@ -128,7 +149,81 @@ class DFRobot_LarkWeatherStation:
           rslt += chr(data)
     return rslt
   
+  def set_radius(self,radius):
+    '''!
+      @brief Set standard wind speed 1. 
+      @param speed Data for standard wind speed 1
+    '''
+    length = 2
+    data = radius * 100;
+    pkt = [0] * (3 + length)
+    pkt[self.INDEX_CMD]        = self.CMD_RADIUS_DATA
+    pkt[self.INDEX_ARGS_NUM_L] = length & 0xFF
+    pkt[self.INDEX_ARGS_NUM_H] = (length >> 8) & 0xFF
+    pkt[self.INDEX_ARGS + 0]       = data >> 8
+    pkt[self.INDEX_ARGS + 1]       = data & 0xff
+    self._send_packet(pkt)
+    time.sleep(2)
+    recv_pkt = self._recv_packet(self.CMD_RADIUS_DATA)
+    if (len(recv_pkt) >= 5) and (recv_pkt[self.INDEX_RES_ERR] == self.ERR_CODE_NONE and recv_pkt[self.INDEX_RES_STATUS] == self.STATUS_SUCCESS):
+      length = recv_pkt[self.INDEX_RES_LEN_L] | (recv_pkt[self.INDEX_RES_LEN_H] << 8)
+      return 1
     
+  def set_speed1(self,speed1):
+    '''!
+      @brief Set standard wind speed 2.
+      @param speed Data for standard wind speed 2
+    '''
+    length = 2
+    data = speed1 * 100;
+    pkt = [0] * (3 + length)
+    pkt[self.INDEX_CMD]        = self.CMD_SPEED1_DATA
+    pkt[self.INDEX_ARGS_NUM_L] = length & 0xFF
+    pkt[self.INDEX_ARGS_NUM_H] = (length >> 8) & 0xFF
+    pkt[self.INDEX_ARGS + 0]       = data >> 8
+    pkt[self.INDEX_ARGS + 1]       = data & 0xff
+    self._send_packet(pkt)
+    time.sleep(10)
+    recv_pkt = self._recv_packet(self.CMD_SPEED1_DATA)
+    if (len(recv_pkt) >= 5) and (recv_pkt[self.INDEX_RES_ERR] == self.ERR_CODE_NONE and recv_pkt[self.INDEX_RES_STATUS] == self.STATUS_SUCCESS):
+      length = recv_pkt[self.INDEX_RES_LEN_L] | (recv_pkt[self.INDEX_RES_LEN_H] << 8)
+    
+  def set_speed2(self,speed2):
+    '''!
+      @brief Start calculating data.
+      @return Status data
+    '''
+    length = 2
+    data = speed2 * 100;
+    pkt = [0] * (3 + length)
+    pkt[self.INDEX_CMD]        = self.CMD_SPEED2_DATA
+    pkt[self.INDEX_ARGS_NUM_L] = length & 0xFF
+    pkt[self.INDEX_ARGS_NUM_H] = (length >> 8) & 0xFF
+    pkt[self.INDEX_ARGS + 0]       = data >> 8
+    pkt[self.INDEX_ARGS + 1]       = data & 0xff
+    self._send_packet(pkt)
+    time.sleep(10)
+    recv_pkt = self._recv_packet(self.CMD_SPEED2_DATA)
+    if (len(recv_pkt) >= 5) and (recv_pkt[self.INDEX_RES_ERR] == self.ERR_CODE_NONE and recv_pkt[self.INDEX_RES_STATUS] == self.STATUS_SUCCESS):
+      length = recv_pkt[self.INDEX_RES_LEN_L] | (recv_pkt[self.INDEX_RES_LEN_H] << 8)
+    
+  def calibration_speed(self):
+    '''!
+      @brief Configure DTU enablement.
+      @param dtuswitch DTU switch
+      @param method Operation mode
+    '''
+    length = 0
+    pkt = [0] * (3 + length)
+    pkt[self.INDEX_CMD]        = self.CMD_CALIBRATOR
+    pkt[self.INDEX_ARGS_NUM_L] = length & 0xFF
+    pkt[self.INDEX_ARGS_NUM_H] = (length >> 8) & 0xFF
+    self._send_packet(pkt)
+    time.sleep(10)
+    recv_pkt = self._recv_packet(self.CMD_CALIBRATOR)
+    if (len(recv_pkt) >= 5) and (recv_pkt[self.INDEX_RES_ERR] == self.ERR_CODE_NONE and recv_pkt[self.INDEX_RES_STATUS] == self.STATUS_SUCCESS):
+      length = recv_pkt[self.INDEX_RES_LEN_L] | (recv_pkt[self.INDEX_RES_LEN_H] << 8)
+
   def get_information(self, state):
     '''!
       @brief Get all data
@@ -202,6 +297,145 @@ class DFRobot_LarkWeatherStation:
         for data in recv_pkt[self.INDEX_RES_DATA:]:
           rslt += chr(data)
     return rslt
+  
+  def config_DTU(self, dtuswitch, method):
+    '''!
+      @brief Configure DTU enablement.
+      @param dtuswitch DTU switch
+      @param method Operation mode
+    '''
+    data = dtuswitch + ',' + method
+    length = len(data)
+    pkt = [0] * (3 + length)
+    pkt[self.INDEX_CMD]        = self.CMD_DTU
+    pkt[self.INDEX_ARGS_NUM_L] = length & 0xFF
+    pkt[self.INDEX_ARGS_NUM_H] = (length >> 8) & 0xFF
+    i = 0
+    for c in data:
+      pkt[self.INDEX_ARGS + i] = ord(c)
+      i += 1
+    self._send_packet(pkt)
+    time.sleep(0.1)
+    recv_pkt = self._recv_packet(self.CMD_DTU)
+    if (len(recv_pkt) >= 5) and (recv_pkt[self.INDEX_RES_ERR] == self.ERR_CODE_NONE and recv_pkt[self.INDEX_RES_STATUS] == self.STATUS_SUCCESS):
+      return 1
+    return 0
+  
+  def config_WIFI(self,ssid,pwd):
+    '''!
+      @brief Configure WiFi information.
+      @param SSID WiFi name
+      @param PWD WiFi password
+    '''
+    data = ssid + ',' + pwd
+    length = len(data)
+    pkt = [0] * (3 + length)
+    pkt[self.INDEX_CMD]        = self.CMD_WIFI
+    pkt[self.INDEX_ARGS_NUM_L] = length & 0xFF
+    pkt[self.INDEX_ARGS_NUM_H] = (length >> 8) & 0xFF
+    i = 0
+    for c in data:
+      pkt[self.INDEX_ARGS + i] = ord(c)
+      i += 1
+    self._send_packet(pkt)
+    time.sleep(0.1)
+    recv_pkt = self._recv_packet(self.CMD_WIFI)
+    if (len(recv_pkt) >= 5) and (recv_pkt[self.INDEX_RES_ERR] == self.ERR_CODE_NONE and recv_pkt[self.INDEX_RES_STATUS] == self.STATUS_SUCCESS):
+      return 1
+    return 0
+  
+  def config_Lora(self,deui,eui,key):
+    '''!
+      @brief Configure LoRa.
+      @param DEUI Gateway
+      @param EUI Node
+      @param KEY Key
+    '''
+    data = deui + ',' + eui + ',' + key
+    length = len(data)
+    pkt = [0] * (3 + length)
+    pkt[self.INDEX_CMD]        = self.CMD_LORA
+    pkt[self.INDEX_ARGS_NUM_L] = length & 0xFF
+    pkt[self.INDEX_ARGS_NUM_H] = (length >> 8) & 0xFF
+    i = 0
+    for c in data:
+      pkt[self.INDEX_ARGS + i] = ord(c)
+      i += 1
+    self._send_packet(pkt)
+    time.sleep(0.1)
+    recv_pkt = self._recv_packet(self.CMD_LORA)
+    if (len(recv_pkt) >= 5) and (recv_pkt[self.INDEX_RES_ERR] == self.ERR_CODE_NONE and recv_pkt[self.INDEX_RES_STATUS] == self.STATUS_SUCCESS):
+      return 1
+    return 0
+  
+  def config_MQTT1(self,Server,Server_IP,Save):
+    '''!
+      @brief MQTT configuration 1.
+      @param Server MQTT platform
+      @param Server_IP MQTT platform IP
+      @param Save Whether to save transmitted data
+    '''
+    data = Server + ',' + Server_IP + ',' +  Save
+    length = len(data)
+    pkt = [0] * (3 + length)
+    pkt[self.INDEX_CMD]        = self.CMD_MQTT1
+    pkt[self.INDEX_ARGS_NUM_L] = length & 0xFF
+    pkt[self.INDEX_ARGS_NUM_H] = (length >> 8) & 0xFF
+    i = 0
+    for c in data:
+      pkt[self.INDEX_ARGS + i] = ord(c)
+      i += 1
+    self._send_packet(pkt)
+    time.sleep(0.1)
+    recv_pkt = self._recv_packet(self.CMD_MQTT1)
+    if (len(recv_pkt) >= 5) and (recv_pkt[self.INDEX_RES_ERR] == self.ERR_CODE_NONE and recv_pkt[self.INDEX_RES_STATUS] == self.STATUS_SUCCESS):
+      return 1
+    return 0
+  def config_MQTT2(self,Iot_ID,Iot_PWD):
+    '''!
+      @brief MQTT configuration 2.
+      @param Iot_ID Login username
+      @param Iot_PWD Login password
+    '''
+    data = Iot_ID + ',' + Iot_PWD
+    length = len(data)
+    pkt = [0] * (3 + length)
+    pkt[self.INDEX_CMD]        = self.CMD_MQTT2
+    pkt[self.INDEX_ARGS_NUM_L] = length & 0xFF
+    pkt[self.INDEX_ARGS_NUM_H] = (length >> 8) & 0xFF
+    i = 0
+    for c in data:
+      pkt[self.INDEX_ARGS + i] = ord(c)
+      i += 1
+    self._send_packet(pkt)
+    time.sleep(0.1)
+    recv_pkt = self._recv_packet(self.CMD_MQTT2)
+    if (len(recv_pkt) >= 5) and (recv_pkt[self.INDEX_RES_ERR] == self.ERR_CODE_NONE and recv_pkt[self.INDEX_RES_STATUS] == self.STATUS_SUCCESS):
+      return 1
+    return 0
+  
+  def config_Topic(self,name,chan):
+    '''!
+      @brief Topic subscription.
+      @param name Topic name
+      @param chan Key
+    '''
+    data = name + ':' + chan
+    length = len(data)
+    pkt = [0] * (3 + length)
+    pkt[self.INDEX_CMD]        = self.CMD_TOP
+    pkt[self.INDEX_ARGS_NUM_L] = length & 0xFF
+    pkt[self.INDEX_ARGS_NUM_H] = (length >> 8) & 0xFF
+    i = 0
+    for c in data:
+      pkt[self.INDEX_ARGS + i] = ord(c)
+      i += 1
+    self._send_packet(pkt)
+    time.sleep(0.1)
+    recv_pkt = self._recv_packet(self.CMD_TOP)
+    if (len(recv_pkt) >= 5) and (recv_pkt[self.INDEX_RES_ERR] == self.ERR_CODE_NONE and recv_pkt[self.INDEX_RES_STATUS] == self.STATUS_SUCCESS):
+      return 1
+    return 0
 
   def _recv_packet(self, cmd):
     '''!
@@ -230,7 +464,7 @@ class DFRobot_LarkWeatherStation:
             #print("command=%x cmd=%x"%(command,cmd))
             if command != cmd:
               rslt[0] = self.ERR_CODE_RES_PKT
-              print("Response pkt is error!")
+              #print("Response pkt is error!")
               return rslt
             lenL = self._recv_data(2)
             length = (lenL[1] << 2) | lenL[0]
@@ -257,7 +491,7 @@ class DFRobot_LarkWeatherStation:
     
 
 
-class DFRobot_LarkWeatherStation_I2C(DFRobot_LarkWeatherStation):
+class DFRobot_Atmospherlum_I2C(DFRobot_Atmospherlum):
   def __init__(self,addr):
     '''!
       @brief DFRobot_SCI_IIC Constructor
@@ -268,7 +502,7 @@ class DFRobot_LarkWeatherStation_I2C(DFRobot_LarkWeatherStation):
     '''
     self._addr = addr
     self._bus = smbus.SMBus(1)
-    DFRobot_LarkWeatherStation.__init__(self)
+    DFRobot_Atmospherlum.__init__(self)
     
 
   def _send_packet(self, pkt):
@@ -299,7 +533,7 @@ class DFRobot_LarkWeatherStation_I2C(DFRobot_LarkWeatherStation):
       i += 1
     return rslt
 
-class DFRobot_LarkWeatherStation_UART(DFRobot_LarkWeatherStation):
+class DFRobot_Atmospherlum_UART(DFRobot_Atmospherlum):
   def __init__(self):
     '''!
       @brief DFRobot_SCI_IIC Constructor
@@ -308,10 +542,10 @@ class DFRobot_LarkWeatherStation_UART(DFRobot_LarkWeatherStation):
       @n RP2040_SCI_ADDR_0X22      0x22
       @n RP2040_SCI_ADDR_0X23      0x23
     '''
-    self.ser = serial.Serial("/dev/ttyS0",115200)
+    self.ser = serial.Serial("/dev/ttyAMA0",115200)
     if self.ser.isOpen == False:
       self.ser.open()
-    DFRobot_LarkWeatherStation.__init__(self)
+    DFRobot_Atmospherlum.__init__(self)
   def _send_packet(self, pkt):
     '''!
       @brief Send data
